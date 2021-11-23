@@ -13,6 +13,12 @@ Option Explicit
 
 '===============================================================================
 
+#If VBA7 Then
+    Private Declare PtrSafe Function SetForegroundWindow Lib "user32" (ByVal win As Long) As Long
+#Else
+    Private Declare Function SetForegroundWindow Lib "user32" (ByVal win As Long) As Long
+#End If
+
 Private Sub Class_Initialize()
   If Not Me Is Helpers Then Err.Raise 425 'Invalid object use
 End Sub
@@ -34,6 +40,7 @@ Public Function GetExcelFile() As IEither
     .Filters.Add "Excel Files", "*.xlsx", 1
     .Title = "Выберите таблицу категорий"
     .AllowMultiSelect = False
+    SetForegroundWindow Excel.Application.Hwnd
     If .Show = -1 Then
       Set GetExcelFile = Either.Create(FileSpec.Create(.SelectedItems(1)))
       Path = GetExcelFile.Value.Path

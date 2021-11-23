@@ -13,11 +13,12 @@ Option Explicit
 '===============================================================================
 
 Private Const VerticalSpaceMult As Double = 0.1
-Private Const HorizontalSpaceMult As Double = 0.75
+Private Const HorizontalSpaceMult As Double = 0.5
 Private Const TextSizeMult As Double = 0.75
 
 Private Type typeThis
   Mobiles As Dictionary
+  Boost As Boolean
   Document As Document
   Columns As Collection
   SumOfAverageSizes As Double
@@ -31,23 +32,30 @@ Private This As typeThis
 
 '===============================================================================
 
-Public Function Create(ByVal Mobiles As Dictionary) As CompositeSheet
+Public Function Create(ByVal Mobiles As Dictionary, _
+                       Optional ByVal Boost As Boolean = True _
+                       ) As CompositeSheet
   With New CompositeSheet
-    Set Create = .Init(Mobiles)
+    Set Create = .Init(Mobiles, Boost)
   End With
 End Function
 
-Friend Function Init(ByVal Mobiles As Dictionary) As CompositeSheet
+Friend Function Init(ByVal Mobiles As Dictionary, _
+                     ByVal Boost As Boolean _
+                     ) As CompositeSheet
   With This
     Set .Mobiles = Mobiles
+    .Boost = Boost
     Set .Columns = New Collection
     Set .FailedFiles = New Collection
     Set .Document = CreateDocument
-    Document.Name = "Навигационные мобайлы"
-    Document.Unit = cdrMillimeter
+    .Document.Name = "Навигационные мобайлы"
+    .Document.Unit = cdrMillimeter
+    .Document.PreserveSelection = Not .Boost
     ImportAndFillColumns
     AlignColumns
     CenterOnPageAndPageResize
+    .Document.PreserveSelection = .Boost
     .Document.ClearSelection
   End With
   Set Init = Me
@@ -124,6 +132,8 @@ Private Sub AlignColumns()
     For Each Column In .Columns
       AlignColumnAndAddCaption Column
       Column.Shapes.LeftX = CurrentRightEdge + .HorizontalSpace
+      'сдвигаем, чтобы удвоить ограничение на ширину страницы
+      .Document.ActivePage.Shapes.All.CenterX = 0
       Column.CaptionShape.CenterX = Column.Shapes.CenterX
       CurrentRightEdge = Column.Shapes.RightX
     Next Column

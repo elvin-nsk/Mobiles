@@ -1,7 +1,7 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
 ' Макрос           : Mobiles
-' Версия           : 2021.11.21
+' Версия           : 2021.11.23
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
@@ -50,7 +50,7 @@ Sub Start()
   
   lib_elvin.BoostStart , RELEASE
   
-  With CompositeSheet.Create(Mobiles)
+  With CompositeSheet.Create(Mobiles, RELEASE)
     If .FailedFiles.Count > 0 Then
       Helpers.Report .FailedFiles
     End If
@@ -118,4 +118,9 @@ Private Sub testEither()
     Debug.Print "Success"
   End If
   Debug.Print VBA.CLng(True)
+End Sub
+
+Private Sub testWidth()
+  ActiveDocument.Unit = cdrMillimeter
+  ActivePage.SizeWidth = 30000
 End Sub
