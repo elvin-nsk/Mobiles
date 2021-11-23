@@ -80,11 +80,15 @@ End Property
 Private Sub ImportAndFillColumns()
   With This
     .Document.Activate
+    Dim PBar As IProgressBar
+    Set PBar = ProgressBar.CreateNumeric(.Mobiles.Count)
+    PBar.Caption = "Импорт мобайлов..."
     Dim Column As structMobilesColumn
     Dim Mobile As structMobile
     Dim Key As Variant
     For Each Key In .Mobiles.Keys
       ImportToColumns .Mobiles.Item(Key)
+      PBar.Update
     Next Key
     If .ImportedMobilesCount > 0 Then _
       .TotalAverageSize = .SumOfAverageSizes / .ImportedMobilesCount

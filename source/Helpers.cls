@@ -40,7 +40,7 @@ Public Function GetExcelFile() As IEither
     .Filters.Add "Excel Files", "*.xlsx", 1
     .Title = "Выберите таблицу категорий"
     .AllowMultiSelect = False
-    SetForegroundWindow Excel.Application.Hwnd
+    SetForegroundWindow Excel.Application.hWnd
     If .Show = -1 Then
       Set GetExcelFile = Either.Create(FileSpec.Create(.SelectedItems(1)))
       Path = GetExcelFile.Value.Path
@@ -97,12 +97,16 @@ End Sub
 
 Public Sub CountMobilesInShapes(ByVal Mobiles As Dictionary, _
                                 ByVal Shapes As ShapeRange)
+  Dim PBar As IProgressBar
+  Set PBar = ProgressBar.CreateNumeric(Shapes.Count)
+  PBar.Caption = "Подсчёт мобайлов..."
   Dim Name As String
   Dim Shape As Shape
   For Each Shape In Shapes
     Name = Shape.Name
     If Not Name = "" Then
       If Mobiles.Exists(Name) Then
+        PBar.Update
         Mobiles(Name).Count = Mobiles(Name).Count + 1
       End If
     End If
