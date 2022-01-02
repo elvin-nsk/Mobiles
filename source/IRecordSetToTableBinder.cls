@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "IEither"
+Attribute VB_Name = "IRecordSetToTableBinder"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -12,19 +12,16 @@ Option Explicit
 
 '===============================================================================
 
-Public Property Get IsError() As Boolean
+Public Property Get RecordSet() As IRecordSet
 End Property
 
-Public Property Get IsSuccess() As Boolean
-End Property
+Public Sub ForceFlush()
+End Sub
 
-Public Property Get ErrorValue() As Variant
-End Property
-
-Public Property Get SuccessValue() As Variant
-End Property
+Public Sub FlushAndCloseTable()
+End Sub
 
 '===============================================================================
 
-Public Property Get Self() As IEither
+Public Property Get Self() As IRecordSetToTableBinder
 End Property

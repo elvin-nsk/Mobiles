@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 ' Модуль           : lib_elvin
-' Версия           : 2021.11.15
+' Версия           : 2021.12.19
 ' Автор            : elvin-nsk (me@elvin.nsk.ru)
 ' Использован код  : dizzy (из макроса CtC), Alex Vakulenko
 '                    и др.
@@ -657,13 +657,14 @@ End Function
 
 'находит временную папку
 Public Function GetTempFolder() As String
-  GetTempFolder = Environ$("TEMP")
-  If GetTempFolder = "" Then
-    GetTempFolder = Environ$("TMP")
-    If GetTempFolder = "" Then
-      If Dir("c:\", vbDirectory) <> "" Then GetTempFolder = "c:\"
-    End If
-  End If
+  GetTempFolder = AddProperEndingToPath(VBA.Environ$("TEMP"))
+  If FileExists(GetTempFolder) Then Exit Function
+  GetTempFolder = AddProperEndingToPath(VBA.Environ$("TMP"))
+  If FileExists(GetTempFolder) Then Exit Function
+  GetTempFolder = "c:\temp\"
+  If FileExists(GetTempFolder) Then Exit Function
+  GetTempFolder = "c:\windows\temp\"
+  If FileExists(GetTempFolder) Then Exit Function
 End Function
 
 'полное имя временного файла
@@ -685,9 +686,9 @@ Public Sub SaveStrToFile(ByRef Content$, ByVal File$, Optional ByVal KeepBak As 
   Dim tTemp$
   
   If KeepBak Then
-    If FileExist(File) Then FileCopy File, tBak
+    If FileExists(File) Then FileCopy File, tBak
   Else
-    If FileExist(File) Then
+    If FileExists(File) Then
       tTemp = GetFilePath(File) & GetTempFileName
       FileCopy File, tTemp
     End If
@@ -741,6 +742,11 @@ End Function
 Public Function FileExists(ByVal File As String) As Boolean
   If File = "" Then Exit Function
   FileExists = VBA.Len(VBA.Dir(File)) > 0
+End Function
+
+Public Function AddProperEndingToPath(ByVal Path As String) As String
+  If Not VBA.Right$(Path, 1) = "\" Then AddProperEndingToPath = Path & "\" _
+  Else: AddProperEndingToPath = Path
 End Function
 
 '---------------------------------------------------------------------------------------
@@ -837,34 +843,34 @@ End Sub
 Public Function CreateGUID(Optional Lowercase As Boolean, _
                            Optional Parens As Boolean _
                            ) As String
-  Dim k As Long, h As String
+  Dim k As Long, H As String
   CreateGUID = VBA.Space(36)
   For k = 1 To VBA.Len(CreateGUID)
     VBA.Randomize
     Select Case k
-      Case 9, 14, 19, 24: h = "-"
-      Case 15:            h = "4"
-      Case 20:            h = VBA.Hex(VBA.Rnd * 3 + 8)
-      Case Else:          h = VBA.Hex(VBA.Rnd * 15)
+      Case 9, 14, 19, 24: H = "-"
+      Case 15:            H = "4"
+      Case 20:            H = VBA.Hex(VBA.Rnd * 3 + 8)
+      Case Else:          H = VBA.Hex(VBA.Rnd * 15)
     End Select
-    Mid(CreateGUID, k, 1) = h
+    Mid(CreateGUID, k, 1) = H
   Next
   If Lowercase Then CreateGUID = VBA.LCase$(CreateGUID)
   If Parens Then CreateGUID = "{" & CreateGUID & "}"
 End Function
 
-Public Function FindMaxValue(ByRef Collection As Collection) As Variant
+Public Function FindMaxValue(ByVal Collection As Collection) As Variant
   Dim Item As Variant
-  For Each Item In CollectionOrArray
+  For Each Item In Collection
     If VBA.IsNumeric(Item) Then
       If Item > FindMaxValue Then FindMaxValue = Item
     End If
   Next Item
 End Function
 
-Public Function FindMinValue(ByRef Collection As Collection) As Variant
+Public Function FindMinValue(ByVal Collection As Collection) As Variant
   Dim Item As Variant
-  For Each Item In CollectionOrArray
+  For Each Item In Collection
     If VBA.IsNumeric(Item) Then
       If Item < FindMinValue Then
         Debug.Print "aaa"

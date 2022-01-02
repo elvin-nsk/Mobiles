@@ -11,6 +11,7 @@ Option Explicit
 
 '===============================================================================
 
+Public Collation As structCollation
 Public File As IFileSpec
 Public Count As Long
 

@@ -6,7 +6,7 @@ Attribute VB_Name = "Either"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 '@PredeclaredId
 Option Explicit
 
@@ -66,8 +66,8 @@ Private Property Get IEither_Self() As IEither
   Set IEither_Self = Me
 End Property
 
-Private Property Get IEither_Value() As Variant
-  AssignUnknown IEither_Value, This.SuccessValue
+Private Property Get IEither_SuccessValue() As Variant
+  AssignUnknown IEither_SuccessValue, This.SuccessValue
 End Property
 
 '===============================================================================

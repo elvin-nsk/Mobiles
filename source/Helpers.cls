@@ -13,11 +13,10 @@ Option Explicit
 
 '===============================================================================
 
-#If VBA7 Then
-    Private Declare PtrSafe Function SetForegroundWindow Lib "user32" (ByVal win As Long) As Long
-#Else
-    Private Declare Function SetForegroundWindow Lib "user32" (ByVal win As Long) As Long
-#End If
+'константы для сохранения последнего пути в реестре
+Const AppName As String = "Mobiles"
+Const Section As String = "Settings"
+Const Key As String = "TableLastPath"
 
 Private Sub Class_Initialize()
   If Not Me Is Helpers Then Err.Raise 425 'Invalid object use
@@ -26,76 +25,64 @@ End Sub
 '===============================================================================
 
 Public Function GetExcelFile() As IEither
-  Const AppName As String = "Mobiles"
-  Const Section As String = "Settings"
-  Const Key As String = "TableLastPath"
+  Dim File As IFileSpec
   Dim Path As String
   Path = GetSetting _
     (AppName, Section, Key, "%USERPROFILE%\Desktop")
-  Dim Result As Variant
-  With Excel.Application.FileDialog(1)
-    .ButtonName = "&Открыть"
-    .InitialFilename = Path
-    .Filters.Clear
-    .Filters.Add "Excel Files", "*.xlsx", 1
+  Dim FilesCollection As New Collection
+  With FileBrowser.Create
+    .Filter = "Excel Files (*.xlsx)" & VBA.Chr(0) & "*.xlsx"
+    .InitialDir = Path
+    .MultiSelect = False
     .Title = "Выберите таблицу категорий"
-    .AllowMultiSelect = False
-    SetForegroundWindow Excel.Application.hWnd
-    If .Show = -1 Then
-      Set GetExcelFile = Either.Create(FileSpec.Create(.SelectedItems(1)))
-      Path = GetExcelFile.Value.Path
-      SaveSetting AppName, Section, Key, Path
-    Else
-      Set GetExcelFile = Either.Create()
-    End If
+    Set FilesCollection = .ShowFileOpenDialog
   End With
+  If FilesCollection.Count = 0 Then
+    Set GetExcelFile = Either.Create()
+    Exit Function
+  End If
+  Set File = FileSpec.Create(FilesCollection(1))
+  Set GetExcelFile = Either.Create(File)
+  Path = File.Path
+  SaveSetting AppName, Section, Key, Path
 End Function
 
-Public Function OpenTableFile(ByVal File As IFileSpec) As IEither
+Public Function OpenTableFile(ByVal File As IFileSpec, _
+                              Optional ByVal ReadOnly As Boolean = False _
+                              ) As IEither
   Dim Result As ITableFile
   On Error GoTo ErrorHandler
-  Set Result = ExcelFile.Create(FileToBind:=File, StartingRow:=2)
+  If ReadOnly Then
+    Set Result = ExcelConnection.CreateReadOnly(FileToBind:=File, SheetName:="Лист1", StartingRow:=2)
+  Else
+    Set Result = ExcelConnection.Create(FileToBind:=File, SheetName:="Лист1", StartingRow:=2)
+  End If
   Set OpenTableFile = Either.Create(Result)
   Exit Function
 ErrorHandler:
   Set OpenTableFile = Either.Create()
 End Function
 
-Public Function GetMobilesFromTable(ByVal Table As ITableFile) As Dictionary
-  Dim Mobiles As Dictionary
-  Set Mobiles = New Dictionary
-  Dim Mobile As structMobile
-  Dim Row As Long
-  Dim Name As String
-  Do
-    Row = Row + 1
-    Name = Table.Cell(Row, 1)
-    tryAddMobile Table, Row, Mobiles
-    If Row = 1000 Then Exit Do
-  Loop Until Name = ""
-  Set GetMobilesFromTable = Mobiles
+Public Function BindMainTable(ByVal Table As ITableFile, _
+                              ByVal KeyFieldName As String _
+                              ) As IRecordSetToTableBinder
+  With RecordSetToTableBinder.Builder(Table)
+    .WithField "Name", 1
+    .WithField "Count", 2
+    .WithField "File", 3
+    .WithKeyField KeyFieldName
+    Set BindMainTable = .Build
+  End With
 End Function
 
-Private Sub tryAddMobile(ByVal Table As ITableFile, _
-                         ByVal Row As Long, _
-                         ByVal Mobiles As Dictionary)
-  
-  Dim Name As String
-  Name = Table.Cell(Row, 1)
-  If Name = "" Then Exit Sub
-  
-  Dim Spec As String
-  Spec = Table.Cell(Row, 3)
-  If Spec = "" Then Exit Sub
-  
-  Dim Mobile As structMobile
-  Set Mobile = New structMobile
-  Set Mobile.File = FileSpec.Create(Spec)
-  Mobiles.Add Name, Mobile
-
+Public Sub ResetMobilesCount(ByVal RecordSet As IRecordSet)
+  Dim Record As IRecord
+  For Each Record In RecordSet.NewEnum
+    Record.Field("Count") = 0
+  Next Record
 End Sub
 
-Public Sub CountMobilesInShapes(ByVal Mobiles As Dictionary, _
+Public Sub CountMobilesInShapes(ByVal RecordSet As IRecordSet, _
                                 ByVal Shapes As ShapeRange)
   Dim PBar As IProgressBar
   Set PBar = ProgressBar.CreateNumeric(Shapes.Count)
@@ -105,34 +92,31 @@ Public Sub CountMobilesInShapes(ByVal Mobiles As Dictionary, _
   For Each Shape In Shapes
     Name = Shape.Name
     If Not Name = "" Then
-      If Mobiles.Exists(Name) Then
+      If RecordSet.KeyFieldExists(Name) Then
         PBar.Update
-        Mobiles(Name).Count = Mobiles(Name).Count + 1
+        RecordSet.Record(Name)("Count") = RecordSet.Record(Name)("Count") + 1
       End If
     End If
   Next Shape
 End Sub
 
-Public Sub WriteMobileCountsToTable(ByVal Mobiles As Dictionary, _
-                                    ByVal Table As ITableFile)
-  Dim Row As Long
-  Dim Name As String
-  Do
-    Row = Row + 1
-    Name = Table.Cell(Row, 1)
-    If Mobiles.Exists(Name) Then
-      Table.Cell(Row, 2) = VBA.CStr(Mobiles.Item(Name).Count)
-    End If
-    If Row = 1000 Then Exit Do
-  Loop Until Name = ""
+Public Sub DebugPathsReplace(ByVal MobilesDic As Dictionary)
+  Dim Mobile As structMobile
+  Dim Key As Variant
+  For Each Key In MobilesDic.Keys
+    MobilesDic(Key).File.Path = _
+      VBA.Replace(MobilesDic(Key).File.Path, _
+        Mobiles.DebugMobilesRootRepalceFrom, _
+        Mobiles.DebugMobilesRootRepalceTo)
+  Next Key
 End Sub
 
 Public Sub Report(ByVal FailedFiles As Collection)
-  Dim Text As String
-  Text = "Следующие файлы не найдены:" & vbCrLf
+  Dim Message As String
+  Message = "Следующие файлы не найдены:" & vbCrLf
   Dim i As Long
   For i = 1 To FailedFiles.Count
-    Text = Text & FailedFiles(i) & vbCrLf
+    Message = Message & FailedFiles(i) & vbCrLf
   Next i
-  VBA.MsgBox Text, vbInformation, "Ошибка импорта"
+  VBA.MsgBox Message, vbInformation, "Ошибка импорта"
 End Sub

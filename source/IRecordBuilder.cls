@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "IEither"
+Attribute VB_Name = "IRecordBuilder"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -12,19 +12,15 @@ Option Explicit
 
 '===============================================================================
 
-Public Property Get IsError() As Boolean
-End Property
+Public Function WithField(ByVal Name As String, _
+                          ByVal Value As Variant _
+                          ) As IRecordBuilder
+End Function
 
-Public Property Get IsSuccess() As Boolean
-End Property
+Public Function Build() As IRecord
+End Function
 
-Public Property Get ErrorValue() As Variant
-End Property
-
-Public Property Get SuccessValue() As Variant
+Public Property Get Events() As IRecordBuilderEvents
 End Property
 
 '===============================================================================
-
-Public Property Get Self() As IEither
-End Property

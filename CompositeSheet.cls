@@ -17,7 +17,7 @@ Private Const HorizontalSpaceMult As Double = 0.5
 Private Const TextSizeMult As Double = 0.75
 
 Private Type typeThis
-  Mobiles As IRecordSet
+  Mobiles As Dictionary
   Boost As Boolean
   Document As Document
   Columns As Collection
@@ -32,7 +32,7 @@ Private This As typeThis
 
 '===============================================================================
 
-Public Function Create(ByVal Mobiles As IRecordSet, _
+Public Function Create(ByVal Mobiles As Dictionary, _
                        Optional ByVal Boost As Boolean = True _
                        ) As CompositeSheet
   With New CompositeSheet
@@ -40,7 +40,7 @@ Public Function Create(ByVal Mobiles As IRecordSet, _
   End With
 End Function
 
-Friend Function Init(ByVal Mobiles As IRecordSet, _
+Friend Function Init(ByVal Mobiles As Dictionary, _
                      ByVal Boost As Boolean _
                      ) As CompositeSheet
   With This
@@ -84,11 +84,12 @@ Private Sub ImportAndFillColumns()
     Set PBar = ProgressBar.CreateNumeric(.Mobiles.Count)
     PBar.Caption = "Импорт мобайлов..."
     Dim Column As structMobilesColumn
-    Dim Record As IRecord
-    For Each Record In .Mobiles.NewEnum
-      ImportToColumns Record
+    Dim Mobile As structMobile
+    Dim Key As Variant
+    For Each Key In .Mobiles.Keys
+      ImportToColumns .Mobiles.Item(Key)
       PBar.Update
-    Next Record
+    Next Key
     If .ImportedMobilesCount > 0 Then _
       .TotalAverageSize = .SumOfAverageSizes / .ImportedMobilesCount
     .VerticalSpace = .TotalAverageSize * VerticalSpaceMult
@@ -96,17 +97,17 @@ Private Sub ImportAndFillColumns()
   End With
 End Sub
 
-Private Sub ImportToColumns(ByVal Mobile As IRecord)
+Private Sub ImportToColumns(ByVal Mobile As structMobile)
   With This
     Dim File As String
     Dim MobilesColumn As structMobilesColumn
-    File = Mobile("File")
+    File = Mobile.File.ToString
     If Not lib_elvin.FileExists(File) Then
       .FailedFiles.Add File
       Exit Sub
     End If
     .Document.ActiveLayer.Import File
-    Set MobilesColumn = GetColumnByCount(Mobile("Count"))
+    Set MobilesColumn = GetColumnByCount(Mobile.Count)
     MobilesColumn.Shapes.Add ActiveShape
     .SumOfAverageSizes = .SumOfAverageSizes + lib_elvin.AverageDim(ActiveShape)
     .ImportedMobilesCount = .ImportedMobilesCount + 1

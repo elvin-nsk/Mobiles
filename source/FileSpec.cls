@@ -43,36 +43,40 @@ End Function
 Private Property Get IFileSpec_Ext() As String
   IFileSpec_Ext = This.Ext
 End Property
-Private Property Let IFileSpec_Ext(ByVal Value As String)
-  This.Ext = Value
+Private Property Let IFileSpec_Ext(ByVal RHS As String)
+  This.Ext = RHS
 End Property
 
 Private Function IFileSpec_ToString() As String
-  IFileSpec_ToString = This.Path & This.NameWithoutExt & AddDotIfNotEmpty(This.Ext)
+  With This
+    IFileSpec_ToString = .Path & .NameWithoutExt & AddDotIfNotEmpty(.Ext)
+  End With
 End Function
 
 Private Property Get IFileSpec_Name() As String
-  IFileSpec_Name = This.NameWithoutExt & AddDotIfNotEmpty(This.Ext)
-End Property
-Private Property Let IFileSpec_Name(ByVal Value As String)
   With This
-    .NameWithoutExt = GetFileNameWithoutExt(Value)
-    .Ext = GetFileExt(Value)
+    IFileSpec_Name = .NameWithoutExt & AddDotIfNotEmpty(.Ext)
+  End With
+End Property
+Private Property Let IFileSpec_Name(ByVal RHS As String)
+  With This
+    .NameWithoutExt = GetFileNameWithoutExt(RHS)
+    .Ext = GetFileExt(RHS)
   End With
 End Property
 
 Private Property Get IFileSpec_NameWithoutExt() As String
   IFileSpec_NameWithoutExt = This.NameWithoutExt
 End Property
-Private Property Let IFileSpec_NameWithoutExt(ByVal Value As String)
-  This.NameWithoutExt = Value
+Private Property Let IFileSpec_NameWithoutExt(ByVal RHS As String)
+  This.NameWithoutExt = RHS
 End Property
 
 Private Property Get IFileSpec_Path() As String
   IFileSpec_Path = This.Path
 End Property
-Private Property Let IFileSpec_Path(ByVal Value As String)
-  This.Path = AddProperEndingToPath(Value)
+Private Property Let IFileSpec_Path(ByVal RHS As String)
+  This.Path = AddProperEndingToPath(RHS)
 End Property
 
 Private Property Get IFileSpec_Self() As IFileSpec
@@ -82,36 +86,36 @@ End Property
 '===============================================================================
 
 Private Function AddProperEndingToPath(ByVal Path As String) As String
-  If Right$(Path, 1) <> "\" Then AddProperEndingToPath = Path & "\" _
+  If Not VBA.Right$(Path, 1) = "\" Then AddProperEndingToPath = Path & "\" _
   Else AddProperEndingToPath = Path
 End Function
 
-Private Function GetFileExt(FileName As String)
-  GetFileExt = Right$(FileName, _
-    Switch _
-      (InStr(FileName, ".") = 0, _
+Private Function GetFileExt(FileName As String) As String
+  GetFileExt = VBA.Right$(FileName, _
+    VBA.Switch _
+      (VBA.InStr(FileName, ".") = 0, _
         0, _
-      InStr(FileName, ".") > 0, _
-        Len(FileName) - InStrRev(FileName, ".")))
+      VBA.InStr(FileName, ".") > 0, _
+        VBA.Len(FileName) - VBA.InStrRev(FileName, ".")))
 End Function
 
 Private Function AddDotIfNotEmpty(ByVal Ext As String) As String
   If Ext = "" Then AddDotIfNotEmpty = "" Else AddDotIfNotEmpty = "." & Ext
 End Function
 
-Private Function GetFileName(ByVal FullFileName As String)
-  GetFileName = Right$(FullFileName, Len(FullFileName) - InStrRev(FullFileName, "\"))
+Private Function GetFileName(ByVal FullFileName As String) As String
+  GetFileName = VBA.Right$(FullFileName, VBA.Len(FullFileName) - VBA.InStrRev(FullFileName, "\"))
 End Function
 
-Private Function GetFileNameWithoutExt(ByVal FileName$) As String
-  GetFileNameWithoutExt = Left$(FileName, _
-    Switch _
-      (InStr(FileName, ".") = 0, _
-        Len(FileName), _
-      InStr(FileName, ".") > 0, _
-        InStrRev(FileName, ".") - 1))
+Private Function GetFileNameWithoutExt(ByVal FileName As String) As String
+  GetFileNameWithoutExt = VBA.Left$(FileName, _
+    VBA.Switch _
+      (VBA.InStr(FileName, ".") = 0, _
+        VBA.Len(FileName), _
+      VBA.InStr(FileName, ".") > 0, _
+        VBA.InStrRev(FileName, ".") - 1))
 End Function
 
 Private Function GetFilePath(ByVal FullFileName As String)
-  GetFilePath = Left$(FullFileName, InStrRev(FullFileName, "\"))
+  GetFilePath = VBA.Left$(FullFileName, VBA.InStrRev(FullFileName, "\"))
 End Function

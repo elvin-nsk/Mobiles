@@ -7,6 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
+'@Folder "Model"
 '@Interface
 Option Explicit
 
@@ -22,17 +23,17 @@ End Function
 
 Public Property Get Name() As String
 End Property
-Public Property Let Name(ByVal Value As String)
+Public Property Let Name(ByVal RHS As String)
 End Property
 
 Public Property Get NameWithoutExt() As String
 End Property
-Public Property Let NameWithoutExt(ByVal Value As String)
+Public Property Let NameWithoutExt(ByVal RHS As String)
 End Property
 
 Public Property Get Path() As String
 End Property
-Public Property Let Path(ByVal Value As String)
+Public Property Let Path(ByVal RHS As String)
 End Property
 
 '===============================================================================
