@@ -65,8 +65,8 @@ End Function
 
 Public Function BindMainTable(ByVal Table As ITableFile, _
                               ByVal KeyFieldName As String _
-                              ) As IRecordSetToTableBinder
-  With RecordSetToTableBinder.Builder(Table)
+                              ) As IRecordListToTableBinder
+  With RecordListToTableBinder.Builder(Table)
     .WithField "Name", 1
     .WithField "Count", 2
     .WithField "File", 3
@@ -75,14 +75,14 @@ Public Function BindMainTable(ByVal Table As ITableFile, _
   End With
 End Function
 
-Public Sub ResetMobilesCount(ByVal RecordSet As IRecordSet)
+Public Sub ResetMobilesCount(ByVal RecordList As IRecordList)
   Dim Record As IRecord
-  For Each Record In RecordSet.NewEnum
+  For Each Record In RecordList.NewEnum
     Record.Field("Count") = 0
   Next Record
 End Sub
 
-Public Sub CountMobilesInShapes(ByVal RecordSet As IRecordSet, _
+Public Sub CountMobilesInShapes(ByVal RecordSet As IRecordList, _
                                 ByVal Shapes As ShapeRange)
   Dim PBar As IProgressBar
   Set PBar = ProgressBar.CreateNumeric(Shapes.Count)

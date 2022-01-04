@@ -40,7 +40,8 @@ Public Function Create(ByVal FileToBind As IFileSpec, _
                        Optional ByVal StartingColumn As Long = 1 _
                        ) As ITableFile
   With New ExcelConnection
-    Set Create = .Init(FileToBind, SheetName, StartingRow, StartingColumn)
+    Set Create = .Init(FileToBind, SheetName, _
+                       StartingRow, StartingColumn, False)
   End With
 End Function
 
@@ -50,7 +51,8 @@ Public Function CreateReadOnly(ByVal FileToBind As IFileSpec, _
                                Optional ByVal StartingColumn As Long = 1 _
                                ) As ITableFile
   With New ExcelConnection
-    Set CreateReadOnly = .Init(FileToBind, SheetName, StartingRow, StartingColumn, True)
+    Set CreateReadOnly = .Init(FileToBind, SheetName, _
+                               StartingRow, StartingColumn, True)
   End With
 End Function
 
@@ -90,7 +92,7 @@ Private Property Let ITableFile_Cell(ByVal Row As Long, _
                                      RHS As String)
   With This.RecordSet
     If Not MoveToRow(Row) Then Exit Property
-    If .EOF Or .BOF Then Exit Property
+    If .EOF Then Exit Property
     .Fields(Column + This.ColumnOffset) = RHS
     .Update
   End With

@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "IRecordSet"
+Attribute VB_Name = "IRecordList"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -49,5 +49,5 @@ End Property
 
 '===============================================================================
 
-Public Property Get Self() As IRecordSet
+Public Property Get Self() As IRecordList
 End Property

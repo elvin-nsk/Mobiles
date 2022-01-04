@@ -1,7 +1,7 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
-' Макрос           : MobilesDic
-' Версия           : 2021.11.23
+' Макрос           : Mobiles
+' Версия           : 2022.01.02
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
@@ -34,27 +34,23 @@ Sub CountMobilesToTable()
   
   Dim File As IFileSpec
   With Helpers.GetExcelFile
-    If .IsError Then
-      Exit Sub
-    Else
-      Set File = .SuccessValue
-    End If
+    If .IsError Then Exit Sub
+    Set File = .SuccessValue
   End With
   
-  With Helpers.OpenTableFile(File)
+  With Helpers.OpenTableFile(File:=File, ReadOnly:=False)
     If .IsError Then
       VBA.MsgBox "Ошибка чтения файла", vbCritical
       Exit Sub
-    Else
-      Set Table = .SuccessValue
     End If
+    Set Table = .SuccessValue
   End With
   
-  Dim Binder As IRecordSetToTableBinder
+  Dim Binder As IRecordListToTableBinder
   Set Binder = Helpers.BindMainTable(Table, "Name")
   
-  Helpers.ResetMobilesCount Binder.RecordSet
-  Helpers.CountMobilesInShapes Binder.RecordSet, ActiveSelectionRange
+  Helpers.ResetMobilesCount Binder.RecordList
+  Helpers.CountMobilesInShapes Binder.RecordList, ActiveSelectionRange
   
 Finally:
   Set Table = Nothing
@@ -74,40 +70,36 @@ Sub CreateSheetsFromTable()
   
   Dim File As IFileSpec
   With Helpers.GetExcelFile
-    If .IsError Then
-      Exit Sub
-    Else
-      Set File = .SuccessValue
-    End If
+    If .IsError Then Exit Sub
+    Set File = .SuccessValue
   End With
   
   With Helpers.OpenTableFile(File:=File, ReadOnly:=True)
     If .IsError Then
       VBA.MsgBox "Ошибка чтения файла", vbCritical
       Exit Sub
-    Else
-      Set Table = .SuccessValue
     End If
+    Set Table = .SuccessValue
   End With
   
-  Dim Binder As IRecordSetToTableBinder
+  Dim Binder As IRecordListToTableBinder
   Set Binder = Helpers.BindMainTable(Table, "File")
   
   lib_elvin.BoostStart , RELEASE
   
-  With CompositeSheet.Create(Binder.RecordSet, RELEASE)
+  With CompositeSheet.Create(Binder.RecordList, RELEASE)
     If .FailedFiles.Count > 0 Then
       Helpers.Report .FailedFiles
     End If
   End With
   
 Finally:
+  Set Table = Nothing
   lib_elvin.BoostFinish
   Exit Sub
 
 Catch:
   VBA.MsgBox VBA.Err.Description, vbCritical, "Ошибка"
-  If Not Table Is Nothing Then Table.ForceClose
   Resume Finally
 
 End Sub
@@ -220,9 +212,8 @@ Private Sub testRecordBuilder()
   End With
 End Sub
 
-Private Sub testRecordSet()
-  Dim RecSet As IRecordSet
-  With RecordSet.Create(MockFieldNames)
+Private Sub testRecordList()
+  With RecordList.Create(MockFieldNames)
     .BuildRecord.WithField("Поле1", 12).WithField("Поле2", "Значение").Build
     .BuildRecord.WithField("Поле1", 55).WithField("Поле2", "Neo").Build
     Debug.Assert .Count = 2
@@ -236,9 +227,8 @@ Private Sub testRecordSet()
   End With
 End Sub
 
-Private Sub testRecordSetWithKeyField()
-  Dim RecSet As IRecordSet
-  With RecordSet.Create(MockFieldNames, "Поле1")
+Private Sub testRecordListWithKeyField()
+  With RecordList.Create(MockFieldNames, "Поле1")
     .BuildRecord.WithField("Поле1", "Вася").WithField("Поле2", "Значение").Build
     .BuildRecord.WithField("Поле1", "Петя").WithField("Поле2", "Neo").Build
     .BuildRecord.WithField("Поле1", "Джон").WithField("Поле2", "Trinity").Build
@@ -261,8 +251,8 @@ Private Sub testBinder()
   Dim File As IFileSpec
   Set File = FileSpec.Create("e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\test.xlsx")
   Set Table = ExcelConnection.CreateReadOnly(File, "Лист1", 2)
-  Dim Binder As IRecordSetToTableBinder
-  With RecordSetToTableBinder.Builder(Table)
+  Dim Binder As IRecordListToTableBinder
+  With RecordListToTableBinder.Builder(Table)
     .WithField "Count", 2
     .WithField "Path", 3
     .WithKeyField "Path"

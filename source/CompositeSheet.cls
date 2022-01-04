@@ -17,7 +17,7 @@ Private Const HorizontalSpaceMult As Double = 0.5
 Private Const TextSizeMult As Double = 0.75
 
 Private Type typeThis
-  Mobiles As IRecordSet
+  Mobiles As IRecordList
   Boost As Boolean
   Document As Document
   Columns As Collection
@@ -32,7 +32,7 @@ Private This As typeThis
 
 '===============================================================================
 
-Public Function Create(ByVal Mobiles As IRecordSet, _
+Public Function Create(ByVal Mobiles As IRecordList, _
                        Optional ByVal Boost As Boolean = True _
                        ) As CompositeSheet
   With New CompositeSheet
@@ -40,7 +40,7 @@ Public Function Create(ByVal Mobiles As IRecordSet, _
   End With
 End Function
 
-Friend Function Init(ByVal Mobiles As IRecordSet, _
+Friend Function Init(ByVal Mobiles As IRecordList, _
                      ByVal Boost As Boolean _
                      ) As CompositeSheet
   With This

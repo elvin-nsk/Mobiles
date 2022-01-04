@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "RecordSet"
+Attribute VB_Name = "RecordList"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -10,7 +10,7 @@ Attribute VB_Exposed = True
 '@PredeclaredId
 Option Explicit
 
-Implements IRecordSet
+Implements IRecordList
 
 '===============================================================================
 
@@ -32,8 +32,8 @@ Attribute PendingRecord.VB_VarHelpID = -1
 Public Function Create(ByVal FieldNames As Collection, _
                        Optional ByVal KeyFieldName As String, _
                        Optional ByVal RecordFactory As IRecordFactory _
-                       ) As IRecordSet
-  With New RecordSet
+                       ) As IRecordList
+  With New RecordList
     Set Create = .Init(FieldNames, KeyFieldName, RecordFactory)
   End With
 End Function
@@ -41,7 +41,7 @@ End Function
 Friend Function Init(ByVal FieldNames As Collection, _
                      ByVal KeyFieldName As String, _
                      ByVal RecordFactory As IRecordFactory _
-                     ) As IRecordSet
+                     ) As IRecordList
   With This
     If RecordFactory Is Nothing Then
       Set .RecordFactory = Record
@@ -57,88 +57,88 @@ End Function
 
 '===============================================================================
 
-Private Function IRecordSet_BuildRecord() As IRecordBuilder
-  Set IRecordSet_BuildRecord = This.RecordFactory.Builder(This.FieldNames)
-  Set PendingRecord = IRecordSet_BuildRecord.Events
+Private Function IRecordList_BuildRecord() As IRecordBuilder
+  Set IRecordList_BuildRecord = This.RecordFactory.Builder(This.FieldNames)
+  Set PendingRecord = IRecordList_BuildRecord.Events
 End Function
 
-Private Property Get IRecordSet_Count() As Long
-  IRecordSet_Count = This.Records.Count
+Private Property Get IRecordList_Count() As Long
+  IRecordList_Count = This.Records.Count
 End Property
 
-Private Function IRecordSet_FieldNameExists(ByVal Name As String) As Boolean
+Private Function IRecordList_FieldNameExists(ByVal Name As String) As Boolean
   Dim Item As Variant
   For Each Item In This.FieldNames
     If Item = Name Then
-      IRecordSet_FieldNameExists = True
+      IRecordList_FieldNameExists = True
       Exit Function
     End If
   Next Item
 End Function
 
-Private Function IRecordSet_FilterLike(ByVal Pattern As String) As Collection
-  Set IRecordSet_FilterLike = New Collection
+Private Function IRecordList_FilterLike(ByVal Pattern As String) As Collection
+  Set IRecordList_FilterLike = New Collection
   Dim Record As IRecord
   For Each Record In This.Records
-    If Record.ContainsLike(Pattern) Then IRecordSet_FilterLike.Add Record
+    If Record.ContainsLike(Pattern) Then IRecordList_FilterLike.Add Record
   Next Record
 End Function
 
-Private Function IRecordSet_FilterMatch(ByVal Value As Variant) As Collection
-  Set IRecordSet_FilterMatch = New Collection
+Private Function IRecordList_FilterMatch(ByVal Value As Variant) As Collection
+  Set IRecordList_FilterMatch = New Collection
   Dim Record As IRecord
   For Each Record In This.Records
-    If Record.Contains(Value) Then IRecordSet_FilterMatch.Add Record
+    If Record.Contains(Value) Then IRecordList_FilterMatch.Add Record
   Next Record
 End Function
 
-Private Function IRecordSet_GetFields(ByVal Name As String) As Collection
-  Set IRecordSet_GetFields = New Collection
+Private Function IRecordList_GetFields(ByVal Name As String) As Collection
+  Set IRecordList_GetFields = New Collection
   Dim Record As IRecord
   For Each Record In This.Records
-    IRecordSet_GetFields.Add Record.Field(Name)
+    IRecordList_GetFields.Add Record.Field(Name)
   Next Record
 End Function
 
-Private Function IRecordSet_KeyFieldExists(ByVal Value As Variant) As Boolean
+Private Function IRecordList_KeyFieldExists(ByVal Value As Variant) As Boolean
   If Not IsKeyFieldValid(Value) Then ThrowKeyFieldNotPrimitive
   Dim Record As IRecord
   For Each Record In This.Records
     If Record.Field(This.KeyFieldName) = Value Then
-      IRecordSet_KeyFieldExists = True
+      IRecordList_KeyFieldExists = True
       Exit Function
     End If
   Next Record
 End Function
 
-Private Property Get IRecordSet_KeyFieldSet() As Boolean
-  IRecordSet_KeyFieldSet = This.IsKeyFieldSet
+Private Property Get IRecordList_KeyFieldSet() As Boolean
+  IRecordList_KeyFieldSet = This.IsKeyFieldSet
 End Property
 
-Private Property Get IRecordSet_NewEnum() As EnumHelper
+Private Property Get IRecordList_NewEnum() As EnumHelper
   With New EnumHelper
     Set .EnumVariant = This.Records.[_NewEnum]
-    Set IRecordSet_NewEnum = .Self
+    Set IRecordList_NewEnum = .Self
   End With
 End Property
 
-Private Property Get IRecordSet_Record(ByVal NumberOrKeyField As Variant) As IRecord
+Private Property Get IRecordList_Record(ByVal NumberOrKeyField As Variant) As IRecord
   Dim Index As Long
   Index = FindRecordIndex(NumberOrKeyField)
   If Index > 0 Then
-    Set IRecordSet_Record = This.Records(Index)
+    Set IRecordList_Record = This.Records(Index)
   Else
     ThrowInvalidRecordNumberOrName
   End If
 End Property
 
-Private Function IRecordSet_RecordExists _
+Private Function IRecordList_RecordExists _
                  (ByVal NumberOrKeyField As Variant) As Boolean
-  IRecordSet_RecordExists = Not (FindRecordIndex(NumberOrKeyField) = 0)
+  IRecordList_RecordExists = Not (FindRecordIndex(NumberOrKeyField) = 0)
 End Function
 
-Private Property Get IRecordSet_Self() As IRecordSet
-  Set IRecordSet_Self = Me
+Private Property Get IRecordList_Self() As IRecordList
+  Set IRecordList_Self = Me
 End Property
 
 '===============================================================================
@@ -205,25 +205,25 @@ Private Function FindRecordIndex(ByVal NumberOrKeyField As Variant) As Long
 End Function
 
 Private Sub ThrowDuplicateFieldName()
-  VBA.Err.Raise CustomError, "RecordSet", "DuplicateFieldName"
+  VBA.Err.Raise CustomError, "RecordList", "DuplicateFieldName"
 End Sub
 
 Private Sub ThrowKeyFieldsAreNotSet()
-  VBA.Err.Raise CustomError, "RecordSet", "KeyFieldsAreNotSet"
+  VBA.Err.Raise CustomError, "RecordList", "KeyFieldsAreNotSet"
 End Sub
 
 Private Sub ThrowInvalidRecordNumberOrName()
-  VBA.Err.Raise CustomError, "RecordSet", "InvalidRecordNumberOrName"
+  VBA.Err.Raise CustomError, "RecordList", "InvalidRecordNumberOrName"
 End Sub
 
 Private Sub ThrowKeyFieldNotPrimitive()
-  VBA.Err.Raise CustomError, "RecordSet", "KeyFieldNotPrimitive"
+  VBA.Err.Raise CustomError, "RecordList", "KeyFieldNotPrimitive"
 End Sub
 
 Private Sub ThrowKeyFieldDuplicate()
-  VBA.Err.Raise CustomError, "RecordSet", "KeyFieldDuplicate"
+  VBA.Err.Raise CustomError, "RecordList", "KeyFieldDuplicate"
 End Sub
 
-Private Property Get Self() As IRecordSet
+Private Property Get Self() As IRecordList
   Set Self = Me
 End Property

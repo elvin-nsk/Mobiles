@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "IRecordSetToTableBinder"
+Attribute VB_Name = "IRecordListToTableBinder"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -12,7 +12,7 @@ Option Explicit
 
 '===============================================================================
 
-Public Property Get RecordSet() As IRecordSet
+Public Property Get RecordList() As IRecordList
 End Property
 
 Public Sub ForceFlush()
@@ -23,5 +23,5 @@ End Sub
 
 '===============================================================================
 
-Public Property Get Self() As IRecordSetToTableBinder
+Public Property Get Self() As IRecordListToTableBinder
 End Property
