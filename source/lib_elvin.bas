@@ -843,17 +843,17 @@ End Sub
 Public Function CreateGUID(Optional Lowercase As Boolean, _
                            Optional Parens As Boolean _
                            ) As String
-  Dim k As Long, H As String
+  Dim K As Long, H As String
   CreateGUID = VBA.Space(36)
-  For k = 1 To VBA.Len(CreateGUID)
+  For K = 1 To VBA.Len(CreateGUID)
     VBA.Randomize
-    Select Case k
+    Select Case K
       Case 9, 14, 19, 24: H = "-"
       Case 15:            H = "4"
       Case 20:            H = VBA.Hex(VBA.Rnd * 3 + 8)
       Case Else:          H = VBA.Hex(VBA.Rnd * 15)
     End Select
-    Mid(CreateGUID, k, 1) = H
+    Mid(CreateGUID, K, 1) = H
   Next
   If Lowercase Then CreateGUID = VBA.LCase$(CreateGUID)
   If Parens Then CreateGUID = "{" & CreateGUID & "}"

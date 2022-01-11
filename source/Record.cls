@@ -22,28 +22,28 @@ Private Type typeThis
   Encapsulated As Scripting.Dictionary
   Changed As Boolean
   BuilderEvents As IRecordBuilderEvents
-  BuilderAssignedNames As Collection
+  BuilderAssignedKeys As Collection
 End Type
 Private This As typeThis
 
 '===============================================================================
 
 Private Function IRecordFactory_Builder _
-                 (ByVal FieldNames As Collection) As IRecordBuilder
+                 (ByVal Keys As Collection) As IRecordBuilder
   With New Record
-    Set IRecordFactory_Builder = .Init(FieldNames)
+    Set IRecordFactory_Builder = .Init(Keys)
   End With
 End Function
 
-Friend Function Init(ByVal FieldNames As Collection) As IRecordBuilder
+Friend Function Init(ByVal Keys As Collection) As IRecordBuilder
   With This
     Set .Encapsulated = New Scripting.Dictionary
     Dim Item As Variant
-    For Each Item In FieldNames
+    For Each Item In Keys
       .Encapsulated.Add Item, Empty
     Next Item
     Set .BuilderEvents = New IRecordBuilderEvents
-    Set .BuilderAssignedNames = New Collection
+    Set .BuilderAssignedKeys = New Collection
   End With
   Set Init = Me
 End Function
@@ -51,11 +51,11 @@ End Function
 '-------------------------------------------------------------------------------
 
 Private Function IRecordBuilder_WithField _
-                 (ByVal Name As String, ByVal Value As Variant) As IRecordBuilder
-  CheckNameOrThrow Name
-  CheckAlreadyAssigned Name
-  AssignUnknownItem Name, Value
-  This.BuilderAssignedNames.Add Name
+                 (ByVal Key As String, ByVal Value As Variant) As IRecordBuilder
+  CheckKeyOrThrow Key
+  CheckAlreadyAssigned Key
+  AssignUnknownItem Key, Value
+  This.BuilderAssignedKeys.Add Key
   Set IRecordBuilder_WithField = Me
 End Function
 
@@ -63,7 +63,7 @@ Private Function IRecordBuilder_Build() As IRecord
   Set IRecordBuilder_Build = Me
   This.BuilderEvents.Built Me
   Set This.BuilderEvents = Nothing
-  Set This.BuilderAssignedNames = Nothing
+  Set This.BuilderAssignedKeys = Nothing
 End Function
 
 Private Property Get IRecordBuilder_Events() As IRecordBuilderEvents
@@ -92,30 +92,30 @@ Private Function IRecord_ContainsLike(ByVal Pattern As String) As Boolean
   Next Item
 End Function
 
-Private Function IRecord_Exists(ByVal FieldName As String) As Boolean
-  IRecord_Exists = This.Encapsulated.Exists(FieldName)
+Private Function IRecord_Exists(ByVal Key As String) As Boolean
+  IRecord_Exists = This.Encapsulated.Exists(Key)
 End Function
 
-Private Property Get IRecord_Field(ByVal Name As String) As Variant
-  CheckNameOrThrow Name
-  AssignUnknown IRecord_Field, This.Encapsulated(Name)
+Private Property Get IRecord_Field(ByVal Key As String) As Variant
+  CheckKeyOrThrow Key
+  AssignUnknown IRecord_Field, This.Encapsulated(Key)
 End Property
-Private Property Let IRecord_Field(ByVal Name As String, RHS As Variant)
-  CheckNameOrThrow Name
-  This.Encapsulated(Name) = RHS
+Private Property Let IRecord_Field(ByVal Key As String, RHS As Variant)
+  CheckKeyOrThrow Key
+  This.Encapsulated(Key) = RHS
   This.Changed = True
 End Property
-Private Property Set IRecord_Field(ByVal Name As String, RHS As Variant)
-  CheckNameOrThrow Name
-  Set This.Encapsulated(Name) = RHS
+Private Property Set IRecord_Field(ByVal Key As String, RHS As Variant)
+  CheckKeyOrThrow Key
+  Set This.Encapsulated(Key) = RHS
   This.Changed = True
 End Property
 
-Private Property Get IRecord_FieldNames() As Collection
-  Set IRecord_FieldNames = New Collection
+Private Property Get IRecord_Keys() As Collection
+  Set IRecord_Keys = New Collection
   Dim Key As Variant
   For Each Key In This.Encapsulated.Keys
-    IRecord_FieldNames.Add Key
+    IRecord_Keys.Add Key
   Next Key
 End Property
 
@@ -129,15 +129,15 @@ End Property
 
 '===============================================================================
 
-Private Sub CheckAlreadyAssigned(ByVal Name As String)
+Private Sub CheckAlreadyAssigned(ByVal Key As String)
   Dim Item As Variant
-  For Each Item In This.BuilderAssignedNames
-    If Item = Name Then ThrowFieldAlreadySet Name
+  For Each Item In This.BuilderAssignedKeys
+    If Item = Key Then ThrowFieldAlreadySet Key
   Next Item
 End Sub
 
-Private Sub CheckNameOrThrow(ByVal Name As String)
-  If Not This.Encapsulated.Exists(Name) Then ThrowWrongFieldName
+Private Sub CheckKeyOrThrow(ByVal Key As String)
+  If Not This.Encapsulated.Exists(Key) Then ThrowWrongKey
 End Sub
 
 Public Sub AssignUnknown(ByRef Destination As Variant, ByRef Value As Variant)
@@ -161,8 +161,8 @@ Private Sub ThrowFieldAlreadySet(ByVal Name As String)
   VBA.Err.Raise CustomError, "Record", "Значение поля '" & Name & "' уже задано"
 End Sub
 
-Private Sub ThrowWrongFieldName()
-  VBA.Err.Raise CustomError, "Record", "WrongFieldName"
+Private Sub ThrowWrongKey()
+  VBA.Err.Raise CustomError, "Record", "WrongKey"
 End Sub
 
 Private Property Get Self() As IRecord

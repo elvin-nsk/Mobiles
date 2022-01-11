@@ -1,7 +1,7 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
 ' Макрос           : Mobiles
-' Версия           : 2022.01.02
+' Версия           : 2022.01.05
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
@@ -12,17 +12,17 @@ Const RELEASE As Boolean = False
 
 '===============================================================================
 
-'Public Const DebugMobilesRootRepalceFrom As String = "C:\МК\"
-'Public Const DebugMobilesRootRepalceTo As String = "e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-29\Data\"
-Public Const DebugMobilesRootRepalceFrom As String = "C:\МобайлыМакеты\"
-Public Const DebugMobilesRootRepalceTo As String = "e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\Data\МобайлыМакеты\"
+Public Const MainTableName As String = "Чек-лист"
+Public Const CategoriesTableName As String = "Категории"
+Public Const SubTableName As String = "Виды"
+Public Const SizesTableName As String = "Размеры"
 
+Public Const DebugMobilesRootRepalceFrom As String = "C:\МК\"
+Public Const DebugMobilesRootRepalceTo As String = "e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-29\Data\"
 
 '===============================================================================
 
 Sub CountMobilesToTable()
-
-  Dim Table As ITableFile
   
   If RELEASE Then On Error GoTo Catch
   
@@ -33,27 +33,23 @@ Sub CountMobilesToTable()
   End If
   
   Dim File As IFileSpec
-  With Helpers.GetExcelFile
+  With Helpers.tryGetExcelFile
     If .IsError Then Exit Sub
     Set File = .SuccessValue
   End With
   
-  With Helpers.OpenTableFile(File:=File, ReadOnly:=False)
-    If .IsError Then
-      VBA.MsgBox "Ошибка чтения файла", vbCritical
-      Exit Sub
-    End If
-    Set Table = .SuccessValue
-  End With
-  
   Dim Binder As IRecordListToTableBinder
-  Set Binder = Helpers.BindMainTable(Table, "Name")
-  
+  With Helpers.tryBindMainTable _
+               (File:=File, NameIsPrimaryKey:=True, ReadOnly:=False)
+    If .IsError Then Exit Sub
+    Set Binder = .SuccessValue
+  End With
+   
   Helpers.ResetMobilesCount Binder.RecordList
   Helpers.CountMobilesInShapes Binder.RecordList, ActiveSelectionRange
   
 Finally:
-  Set Table = Nothing
+  Set Binder = Nothing
   Exit Sub
 
 Catch:
@@ -64,97 +60,44 @@ End Sub
 
 Sub CreateSheetsFromTable()
 
-  Dim Table As ITableFile
-
   If RELEASE Then On Error GoTo Catch
   
   Dim File As IFileSpec
-  With Helpers.GetExcelFile
+  With Helpers.tryGetExcelFile
     If .IsError Then Exit Sub
     Set File = .SuccessValue
   End With
   
-  With Helpers.OpenTableFile(File:=File, ReadOnly:=True)
-    If .IsError Then
-      VBA.MsgBox "Ошибка чтения файла", vbCritical
-      Exit Sub
-    End If
-    Set Table = .SuccessValue
-  End With
-  
   Dim Binder As IRecordListToTableBinder
-  Set Binder = Helpers.BindMainTable(Table, "File")
+  With Helpers.tryBindMainTable _
+               (File:=File, NameIsPrimaryKey:=False, ReadOnly:=True)
+    If .IsError Then Exit Sub
+    Set Binder = .SuccessValue
+  End With
+  #If Not RELEASE Then
+    Helpers.DebugPathsReplace Binder.RecordList
+  #End If
+  
+  'Helpers.ValidateMainTable Binder.RecordList
   
   lib_elvin.BoostStart , RELEASE
   
-  With CompositeSheet.Create(Binder.RecordList, RELEASE)
-    If .FailedFiles.Count > 0 Then
-      Helpers.Report .FailedFiles
-    End If
-  End With
+  'With CompositeSheet.Create(Binder.RecordList, RELEASE)
+  '  If .FailedFiles.Count > 0 Then
+  '    Helpers.Report .FailedFiles
+  '  End If
+  'End With
+    
+  Debug.Print Binder.RecordList.Count
+  Debug.Assert Binder.RecordList(5)("File") <> ""
   
 Finally:
-  Set Table = Nothing
+  Set Binder = Nothing
   lib_elvin.BoostFinish
   Exit Sub
 
 Catch:
   VBA.MsgBox VBA.Err.Description, vbCritical, "Ошибка"
-  Resume Finally
-
-End Sub
-
-Sub Start()
-
-  If RELEASE Then On Error GoTo Catch
-  
-  If ActiveDocument Is Nothing Then Exit Sub
-  If ActiveSelectionRange.Count = 0 Then
-    VBA.MsgBox "Выберите мобайлы"
-    Exit Sub
-  End If
-  
-  Dim File As IFileSpec
-  With Helpers.GetExcelFile
-    If .IsError Then
-      Exit Sub
-    Else
-      Set File = .SuccessValue
-    End If
-  End With
-  
-  Dim Table As ITableFile
-  With Helpers.OpenTableFile(File)
-    If .IsError Then
-      VBA.MsgBox "Ошибка чтения файла", vbCritical
-      Exit Sub
-    Else
-      Set Table = .SuccessValue
-    End If
-  End With
-  
-  Dim MobilesDic As Dictionary
-  Set MobilesDic = Helpers.GetMobilesFromTable(Table)
-  Helpers.CountMobilesInShapes MobilesDic, ActiveSelectionRange
-  Helpers.WriteMobileCountsToTable MobilesDic, Table
-  
-  Set Table = Nothing
-  
-  lib_elvin.BoostStart , RELEASE
-  
-  With CompositeSheet.Create(MobilesDic, RELEASE)
-    If .FailedFiles.Count > 0 Then
-      Helpers.Report .FailedFiles
-    End If
-  End With
-  
-Finally:
-  lib_elvin.BoostFinish
-  Exit Sub
-
-Catch:
-  VBA.MsgBox VBA.Err.Description, vbCritical, "Ошибка"
-  If Not Table Is Nothing Then Table.ForceClose
   Resume Finally
 
 End Sub
@@ -162,19 +105,6 @@ End Sub
 '===============================================================================
 ' тесты
 '===============================================================================
-
-Private Sub testExcelConnection()
-  Dim Table As ITableFile
-  Dim File As IFileSpec
-  Set File = FileSpec.Create("e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\test.xlsx")
-  With ExcelConnection.CreateReadOnly(File, "Лист1")
-    Debug.Print .Cell(1, 1)
-    Debug.Print .Cell(19, 3)
-    Debug.Print .Cell(1, 2)
-    '.Cell(2, 3) = 123
-  End With
-  
-End Sub
 
 Private Sub testExcelEditLateBinding()
   Dim App As Object
@@ -195,7 +125,7 @@ Private Sub testRecordBuilder()
   Dim Rec As IRecord
   Dim RecFactory As IRecordFactory
   Set RecFactory = Record
-  With RecFactory.Builder(MockFieldNames)
+  With RecFactory.Builder(StubKeys)
     .WithField "Поле1", 12
     .WithField "Поле2", "Значение"
     Set Rec = .Build
@@ -213,22 +143,24 @@ Private Sub testRecordBuilder()
 End Sub
 
 Private Sub testRecordList()
-  With RecordList.Create(MockFieldNames)
+  With RecordList.Create(StubKeys)
     .BuildRecord.WithField("Поле1", 12).WithField("Поле2", "Значение").Build
     .BuildRecord.WithField("Поле1", 55).WithField("Поле2", "Neo").Build
     Debug.Assert .Count = 2
     Debug.Assert .RecordExists(2) = True
     Debug.Assert .RecordExists(15) = False
-    Debug.Assert .KeyFieldSet = False
+    Debug.Assert .PrimaryKeySet = False
     Debug.Assert .Record(1).Field("Поле1") = 12
     Debug.Assert .Record(2)("Поле2") = "Neo"
     .Record(1).Field("Поле1") = 777
     Debug.Assert .Record(1).Field("Поле1") = 777
+    Debug.Assert .Filter.Fields(777).Count = 1
+    Debug.Assert .Filter.Fields("NoSuchValue").Count = 0
   End With
 End Sub
 
-Private Sub testRecordListWithKeyField()
-  With RecordList.Create(MockFieldNames, "Поле1")
+Private Sub testRecordListWithPrimaryKey()
+  With RecordList.Create(StubKeys, "Поле1")
     .BuildRecord.WithField("Поле1", "Вася").WithField("Поле2", "Значение").Build
     .BuildRecord.WithField("Поле1", "Петя").WithField("Поле2", "Neo").Build
     .BuildRecord.WithField("Поле1", "Джон").WithField("Поле2", "Trinity").Build
@@ -236,13 +168,13 @@ Private Sub testRecordListWithKeyField()
     Debug.Assert .Count = 4
     Debug.Assert .RecordExists("Джон") = True
     Debug.Assert .RecordExists("Хамелеон") = False
-    Debug.Assert .KeyFieldSet = True
-    Debug.Assert .KeyFieldExists("Джон") = True
-    Debug.Assert .KeyFieldExists("Зязя") = False
+    Debug.Assert .PrimaryKeySet = True
+    Debug.Assert .PrimaryFieldExists("Джон") = True
+    Debug.Assert .PrimaryFieldExists("Зязя") = False
     Debug.Assert .Record("Петя")("Поле2") = "Neo"
     Debug.Assert .Record("Джон")("Поле2") = "Trinity"
     Debug.Assert .Record(1).ContainsLike("Знач*") = True
-    Debug.Assert .FilterLike("Джон*").Count = 2
+    Debug.Assert .Filter.FieldsLike("Джон*", "Поле1").Count = 2
   End With
 End Sub
 
@@ -250,24 +182,89 @@ Private Sub testBinder()
   Dim Table As ITableFile
   Dim File As IFileSpec
   Set File = FileSpec.Create("e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\test.xlsx")
-  Set Table = ExcelConnection.CreateReadOnly(File, "Лист1", 2)
+  Set Table = ExcelConnection.Create(File, "Чек-лист", 2)
   Dim Binder As IRecordListToTableBinder
   With RecordListToTableBinder.Builder(Table)
-    .WithField "Count", 2
-    .WithField "Path", 3
-    .WithKeyField "Path"
+    .WithKey "Count", 3
+    .WithPrimaryKey "Path", 4
+    .WithUnboundKey "Дополнительное поле"
     Set Binder = .Build
   End With
   With Binder
-    Debug.Print .RecordSet.Count
-    Debug.Print .RecordSet(1)("Path")
-    '.RecordSet(1)("Path") = "1111"
+    .RecordList(1)("Дополнительное поле") = "First"
+    .RecordList(2)("Дополнительное поле") = 2#
+    Debug.Print .RecordList(1)("Дополнительное поле")
+    Debug.Print .RecordList(2)("Дополнительное поле")
+    Debug.Print .RecordList.Count
+    Debug.Print .RecordList(1)("Path")
+    .RecordList(1)("Path") = "1111"
   End With
 End Sub
 
-Private Function MockFieldNames() As Collection
-  Set MockFieldNames = New Collection
-  MockFieldNames.Add "Поле1"
-  MockFieldNames.Add "Поле2"
-  MockFieldNames.Add "3"
+Private Sub testExcelConnection()
+  Dim Table As ITableFile
+  Dim File As IFileSpec
+  Set File = FileSpec.Create("e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\test.xlsx")
+  With ExcelConnection.Create(File, "Чек-лист")
+    Debug.Print .Cell(1, 1)
+    Debug.Print .Cell(19, 3)
+    Debug.Print .Cell(2, 1)
+    .Cell(2, 1) = lib_elvin.RndInt(1, 100)
+    Debug.Print .Cell(2, 1)
+    '.ForceSave
+    '.ForceClose
+  End With
+  
+End Sub
+
+Sub testADODB()
+
+  Const adLockOptimistic = 3
+  Const adLockReadOnly = 1
+  Const adUseServer = 2
+  Const adUseClient = 3
+  Const adSchemaTables = 20
+
+  Const File = "e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-16\test.xlsx"
+  
+  Dim RecordSet As Object 'ADODB.RecordSet
+  
+  Dim Connection As Object 'ADODB.Connection
+  Set Connection = VBA.CreateObject("ADODB.Connection")
+  Dim SheetName As String
+  With Connection
+    .Provider = "Microsoft.ACE.OLEDB.12.0"
+    .Properties("Extended Properties").Value = "Excel 12.0;HDR=No"
+    .Open File
+    With .OpenSchema(adSchemaTables)
+      SheetName = "Чек-лист$" '.Fields("table_name").Value
+      .Close
+    End With
+    'Debug.Print SheetName
+    Set RecordSet = VBA.CreateObject("ADODB.RecordSet")
+    With RecordSet
+      .ActiveConnection = Connection
+      .LockType = adLockOptimistic
+      .CursorLocation = adUseServer
+      .Source = "Select * from [" & SheetName & "]"
+      .Open
+      Debug.Print .RecordCount
+      .MoveFirst
+      .Move 1
+      .Fields(0) = "123"
+      .Update 'save
+      '.CancelUpdate
+      .Close
+    End With
+  End With
+  
+  Connection.Close
+
+End Sub
+
+Private Function StubKeys() As Collection
+  Set StubKeys = New Collection
+  StubKeys.Add "Поле1"
+  StubKeys.Add "Поле2"
+  StubKeys.Add "3"
 End Function

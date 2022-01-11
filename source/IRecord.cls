@@ -13,18 +13,18 @@ Option Explicit
 '===============================================================================
 
 '@DefaultMember
-Public Property Get Field(ByVal Name As String) As Variant
+Public Property Get Field(ByVal Key As String) As Variant
 Attribute Field.VB_UserMemId = 0
 End Property
-Public Property Let Field(ByVal Name As String, RHS As Variant)
+Public Property Let Field(ByVal Key As String, RHS As Variant)
 End Property
-Public Property Set Field(ByVal Name As String, RHS As Variant)
-End Property
-
-Public Property Get FieldNames() As Collection
+Public Property Set Field(ByVal Key As String, RHS As Variant)
 End Property
 
-Public Function Exists(ByVal FieldName As String) As Boolean
+Public Property Get Keys() As Collection
+End Property
+
+Public Function Exists(ByVal Key As String) As Boolean
 End Function
 
 Public Function Contains(ByVal Value As Variant) As Boolean

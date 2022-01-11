@@ -13,7 +13,7 @@ Option Explicit
 '===============================================================================
 
 '@DefaultMember
-Public Property Get Record(ByVal NumberOrKeyField As Variant) As IRecord
+Public Property Get Record(ByVal NumberOrPrimaryField As Variant) As IRecord
 Attribute Record.VB_UserMemId = 0
 End Property
 
@@ -26,22 +26,19 @@ End Function
 Public Property Get Count() As Long
 End Property
 
-Public Function RecordExists(ByVal NumberOrKeyField As Variant) As Boolean
+Public Function RecordExists(ByVal NumberOrPrimaryField As Variant) As Boolean
 End Function
 
-Public Function FieldNameExists(ByVal Name As String) As Boolean
+Public Function KeyExists(ByVal Key As String) As Boolean
 End Function
 
-Public Function KeyFieldExists(ByVal Value As Variant) As Boolean
+Public Function PrimaryFieldExists(ByVal Value As Variant) As Boolean
 End Function
 
-Public Property Get KeyFieldSet() As Boolean
+Public Property Get PrimaryKeySet() As Boolean
 End Property
 
-Public Function FilterMatch(ByVal Value As Variant) As Collection
-End Function
-
-Public Function FilterLike(ByVal Pattern As String) As Collection
+Public Function Filter() As IRecordListFilter
 End Function
 
 Public Property Get NewEnum() As EnumHelper

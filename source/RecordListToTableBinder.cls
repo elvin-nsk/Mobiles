@@ -26,9 +26,10 @@ Private Type typeThis
   Table As ITableFile
   Bindings As Scripting.Dictionary
   RecordsToRowsCollation As Collection
-  KeyFieldName As String
+  PrimaryKey As String
+  MandatoryKeys As Collection
   IsKeyFieldSet As Boolean
-  FieldNames As Collection
+  Keys As Collection
   RecordFactory As IRecordFactory
 End Type
 Private This As typeThis
@@ -44,9 +45,15 @@ Public Function Builder(ByVal Table As ITableFile, _
 End Function
 
 Private Sub Class_Terminate()
-  If Not This.RecordList Is Nothing And _
-     Not This.Table Is Nothing Then _
-    Self.ForceFlush
+  With This
+    If .RecordList Is Nothing Or _
+       .Table Is Nothing Then
+      Exit Sub
+    End If
+    If Not .Table.ReadOnly Then
+      TableWalk ActionWrite
+    End If
+  End With
 End Sub
 
 Friend Function Init(ByVal Table As ITableFile, _
@@ -57,31 +64,51 @@ Friend Function Init(ByVal Table As ITableFile, _
     Set .Bindings = New Scripting.Dictionary
     Set .RecordsToRowsCollation = New Collection
     Set .RecordFactory = RecordFactory
-    Set .FieldNames = New Collection
+    Set .Keys = New Collection
+    Set .MandatoryKeys = New Collection
   End With
   Set Init = Me
 End Function
 
 '-------------------------------------------------------------------------------
 
-Private Function IRecordListToTableBinderBuilder_WithField _
-                 (ByVal FieldName As String, ByVal ColumnToBind As Long) As IRecordListToTableBinderBuilder
-  This.Bindings.Add FieldName, ColumnToBind
-  This.FieldNames.Add FieldName
+Private Function IRecordListToTableBinderBuilder_WithKey _
+                 (ByVal Key As String, ByVal ColumnToBind As Long _
+                 ) As IRecordListToTableBinderBuilder
+  This.Bindings.Add Key, ColumnToBind
+  This.Keys.Add Key
 End Function
 
-Private Function IRecordListToTableBinderBuilder_WithKeyField _
-                 (ByVal KeyFieldName As String) As IRecordListToTableBinderBuilder
-  This.KeyFieldName = KeyFieldName
+Private Function IRecordListToTableBinderBuilder_WithMandatoryKey _
+                 (ByVal Key As String, ByVal ColumnToBind As Long _
+                 ) As IRecordListToTableBinderBuilder
+  This.Bindings.Add Key, ColumnToBind
+  This.Keys.Add Key
+  This.MandatoryKeys.Add Key
+End Function
+
+Private Function IRecordListToTableBinderBuilder_WithPrimaryKey _
+                 (ByVal Key As String, ByVal ColumnToBind As Long _
+                 ) As IRecordListToTableBinderBuilder
+  If Not This.PrimaryKey = "" Then ThrowPrimaryKeyAlreadySet
+  This.Bindings.Add Key, ColumnToBind
+  This.Keys.Add Key
+  This.PrimaryKey = Key
+End Function
+
+
+Private Function IRecordListToTableBinderBuilder_WithUnboundKey _
+                 (ByVal Key As String) As IRecordListToTableBinderBuilder
+  This.Keys.Add Key
 End Function
 
 Private Function IRecordListToTableBinderBuilder_Build() As IRecordListToTableBinder
   With This
-    .IsKeyFieldSet = Not (.KeyFieldName = "")
-    Set .RecordList = RecordList.Create(.FieldNames, .KeyFieldName, .RecordFactory)
+    .IsKeyFieldSet = Not (.PrimaryKey = "")
+    Set .RecordList = RecordList.Create(.Keys, .PrimaryKey, .RecordFactory)
     TableWalk ActionCreateAndRead
     Set IRecordListToTableBinderBuilder_Build = Me
-    Set .FieldNames = Nothing
+    Set .Keys = Nothing
     Set .RecordFactory = Nothing
   End With
 End Function
@@ -91,18 +118,6 @@ End Function
 Private Property Get IRecordListToTableBinder_RecordList() As IRecordList
   Set IRecordListToTableBinder_RecordList = This.RecordList
 End Property
-
-Private Sub IRecordListToTableBinder_FlushAndCloseTable()
-  Self.ForceFlush
-  This.Table.ForceClose
-End Sub
-
-Private Sub IRecordListToTableBinder_ForceFlush()
-  If Not This.Table.ReadOnly Then
-    TableWalk ActionWrite
-    This.Table.ForceSave
-  End If
-End Sub
 
 Private Property Get IRecordListToTableBinder_Self() As IRecordListToTableBinder
   Set IRecordListToTableBinder_Self = Me
@@ -155,9 +170,22 @@ End Sub
 Private Function IsRowValidToRecord(ByVal Row As Long) As Boolean
   With This
     If .IsKeyFieldSet Then
-      If .Table.Cell(Row, .Bindings(.KeyFieldName)) = "" Then Exit Function
+      If .Table.Cell(Row, .Bindings(.PrimaryKey)) = "" Then Exit Function
     End If
+    If IsMandatoryFieldsEmpty(Row) Then Exit Function
     IsRowValidToRecord = True
+  End With
+End Function
+
+Private Function IsMandatoryFieldsEmpty(ByVal Row As Long) As Boolean
+  With This
+    Dim Key As Variant
+    For Each Key In .MandatoryKeys
+      If .Table.Cell(Row, .Bindings(Key)) = "" Then
+        IsMandatoryFieldsEmpty = True
+        Exit Function
+      End If
+    Next Key
   End With
 End Function
 
@@ -171,6 +199,10 @@ Private Function FindRecordIndex(ByVal Row As Long) As Long
     End If
   Next i
 End Function
+
+Private Sub ThrowPrimaryKeyAlreadySet()
+  VBA.Err.Raise CustomError, "RecordListToTableBinder", "PrimaryKeyAlreadySet"
+End Sub
 
 Private Property Get Self() As IRecordListToTableBinder
   Set Self = Me

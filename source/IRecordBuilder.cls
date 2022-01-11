@@ -12,7 +12,7 @@ Option Explicit
 
 '===============================================================================
 
-Public Function WithField(ByVal Name As String, _
+Public Function WithField(ByVal Key As String, _
                           ByVal Value As Variant _
                           ) As IRecordBuilder
 End Function

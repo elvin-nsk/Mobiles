@@ -12,12 +12,22 @@ Option Explicit
 
 '===============================================================================
 
-Public Function WithField(ByVal FieldName As String, _
-                          ByVal ColumnToBind As Long _
-                          ) As IRecordListToTableBinderBuilder
+Public Function WithKey(ByVal Key As String, _
+                        ByVal ColumnToBind As Long _
+                        ) As IRecordListToTableBinderBuilder
 End Function
 
-Public Function WithKeyField(ByVal KeyFieldName As String) As IRecordListToTableBinderBuilder
+Public Function WithMandatoryKey(ByVal Key As String, _
+                                 ByVal ColumnToBind As Long _
+                                 ) As IRecordListToTableBinderBuilder
+End Function
+
+Public Function WithPrimaryKey(ByVal Key As String, _
+                               ByVal ColumnToBind As Long _
+                               ) As IRecordListToTableBinderBuilder
+End Function
+
+Public Function WithUnboundKey(ByVal Key As String) As IRecordListToTableBinderBuilder
 End Function
 
 '===============================================================================

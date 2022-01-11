@@ -15,12 +15,6 @@ Option Explicit
 Public Property Get RecordList() As IRecordList
 End Property
 
-Public Sub ForceFlush()
-End Sub
-
-Public Sub FlushAndCloseTable()
-End Sub
-
 '===============================================================================
 
 Public Property Get Self() As IRecordListToTableBinder

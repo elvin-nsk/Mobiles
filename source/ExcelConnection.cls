@@ -16,8 +16,12 @@ Implements ITableFile
 
 Private Const adLockReadOnly = 1
 Private Const adLockOptimistic = 3
+Private Const adOpenStatic = 3
+Private Const adUseServer = 2
 Private Const adUseClient = 3
 Private Const adSchemaTables = 20
+Private Const adEditInProgress = 1
+Private Const adResyncAllValues = 2
 
 Private Type typeThis
   File As IFileSpec
@@ -34,22 +38,24 @@ Private This As typeThis
 
 '===============================================================================
 
-Public Function Create(ByVal FileToBind As IFileSpec, _
-                       Optional ByVal SheetName As String, _
-                       Optional ByVal StartingRow As Long = 1, _
-                       Optional ByVal StartingColumn As Long = 1 _
-                       ) As ITableFile
+Public Function Create( _
+                  ByVal FileToBind As IFileSpec, _
+                  Optional ByVal SheetName As String, _
+                  Optional ByVal StartingRow As Long = 1, _
+                  Optional ByVal StartingColumn As Long = 1 _
+                ) As ITableFile
   With New ExcelConnection
     Set Create = .Init(FileToBind, SheetName, _
                        StartingRow, StartingColumn, False)
   End With
 End Function
 
-Public Function CreateReadOnly(ByVal FileToBind As IFileSpec, _
-                               Optional ByVal SheetName As String, _
-                               Optional ByVal StartingRow As Long = 1, _
-                               Optional ByVal StartingColumn As Long = 1 _
-                               ) As ITableFile
+Public Function CreateReadOnly( _
+                  ByVal FileToBind As IFileSpec, _
+                  Optional ByVal SheetName As String, _
+                  Optional ByVal StartingRow As Long = 1, _
+                  Optional ByVal StartingColumn As Long = 1 _
+                ) As ITableFile
   With New ExcelConnection
     Set CreateReadOnly = .Init(FileToBind, SheetName, _
                                StartingRow, StartingColumn, True)
@@ -57,6 +63,7 @@ Public Function CreateReadOnly(ByVal FileToBind As IFileSpec, _
 End Function
 
 Private Sub Class_Terminate()
+  On Error Resume Next
   With This
     If Not .RecordSet Is Nothing Then
       Self.ForceSave
@@ -64,14 +71,16 @@ Private Sub Class_Terminate()
     End If
     If Not .Connection Is Nothing Then .Connection.Close
   End With
+  On Error GoTo 0
 End Sub
 
-Friend Function Init(ByVal FileToBind As IFileSpec, _
-                     ByVal SheetName As String, _
-                     ByVal StartingRow As Long, _
-                     ByVal StartingColumn As Long, _
-                     Optional ByVal ReadOnly As Boolean = False _
-                     ) As ITableFile
+Friend Function Init( _
+                  ByVal FileToBind As IFileSpec, _
+                  ByVal SheetName As String, _
+                  ByVal StartingRow As Long, _
+                  ByVal StartingColumn As Long, _
+                  Optional ByVal ReadOnly As Boolean = False _
+                ) As ITableFile
   With This
     Set .File = FileToBind
     .SheetName = SheetName
@@ -91,10 +100,12 @@ Private Property Let ITableFile_Cell(ByVal Row As Long, _
                                      ByVal Column As Long, _
                                      RHS As String)
   With This.RecordSet
-    If Not MoveToRow(Row) Then Exit Property
-    If .EOF Then Exit Property
-    .Fields(Column + This.ColumnOffset) = RHS
-    .Update
+    If This.ReadOnly Then ThrowReadOnly
+    If Not tryMoveCursorToRow(Row) Then Exit Property
+    If VBA.IsNull(.Fields(Column + This.ColumnOffset).Value) And RHS = "" Then
+      Exit Property
+    End If
+    .Fields(Column + This.ColumnOffset).Value = RHS
   End With
 End Property
 Private Property Get ITableFile_Cell(ByVal Row As Long, _
@@ -102,8 +113,8 @@ Private Property Get ITableFile_Cell(ByVal Row As Long, _
                                      ) As String
   Dim TempVar As Variant
   With This.RecordSet
-    If Not MoveToRow(Row) Then Exit Property
-    TempVar = .Fields(Column + This.ColumnOffset)
+    If Not tryMoveCursorToRow(Row) Then Exit Property
+    TempVar = .Fields(Column + This.ColumnOffset).Value
     If Not VBA.IsNull(TempVar) Then
       ITableFile_Cell = TempVar
     End If
@@ -113,20 +124,24 @@ End Property
 Private Sub ITableFile_ForceClose()
   With This
     If Not .RecordSet Is Nothing Then
-      If Not .ReadOnly Then .RecordSet.CancelUpdate
+      If .RecordSet.EditMode = adEditInProgress Then .RecordSet.CancelBatch
       .RecordSet.Close
+      Set .RecordSet = Nothing
     End If
-    If Not .Connection Is Nothing Then .Connection.Close
+    If Not .Connection Is Nothing Then
+      .Connection.Close
+      Set .Connection = Nothing
+    End If
   End With
 End Sub
 
 Private Sub ITableFile_ForceLoad()
-
+  ThrowNotImplemented "ForceLoad"
 End Sub
 
 Private Sub ITableFile_ForceSave()
   With This
-    If Not .ReadOnly Then .RecordSet.Update
+    If .RecordSet.EditMode = adEditInProgress Then .RecordSet.Update
   End With
 End Sub
 
@@ -139,7 +154,7 @@ Private Property Get ITableFile_MaxRow() As Long
 End Property
 
 Private Property Get ITableFile_ReadOnly() As Boolean
-
+  ITableFile_ReadOnly = This.ReadOnly
 End Property
 
 Private Property Get ITableFile_Self() As ITableFile
@@ -158,13 +173,14 @@ Private Sub Connect()
   End With
   Set This.RecordSet = VBA.CreateObject("ADODB.RecordSet")
   With This.RecordSet
-    .ActiveConnection = This.Connection
+    Set .ActiveConnection = This.Connection
+    .CursorType = adOpenStatic
+    .CursorLocation = adUseClient
     If This.ReadOnly Then
       .LockType = adLockReadOnly
     Else
       .LockType = adLockOptimistic
     End If
-    .CursorLocation = adUseClient
     .Source = "SELECT * FROM [" & This.SheetName & "]"
     .Open
   End With
@@ -181,13 +197,21 @@ Private Function ValidateSheetName()
   End If
 End Function
 
-Private Function MoveToRow(ByVal Row As Long) As Boolean
+Private Function tryMoveCursorToRow(ByVal Row As Long) As Boolean
   With This.RecordSet
     .MoveFirst
     .Move Row + This.RowOffset
-    If Not .EOF Then MoveToRow = True
+    If Not .EOF Then tryMoveCursorToRow = True
   End With
 End Function
+
+Private Sub ThrowReadOnly()
+  VBA.Err.Raise CustomError, "ExcelConnection", "TableIsReadOnly"
+End Sub
+
+Private Sub ThrowNotImplemented(Optional ByVal FunctionName As String = "Function")
+  VBA.Err.Raise CustomError, "ExcelConnection", FunctionName & " not implemented"
+End Sub
 
 Private Property Get Self() As ITableFile
   Set Self = Me

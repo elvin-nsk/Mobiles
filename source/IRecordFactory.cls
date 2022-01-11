@@ -12,7 +12,7 @@ Option Explicit
 
 '===============================================================================
 
-Public Function Builder(ByVal FieldNames As Collection) As IRecordBuilder
+Public Function Builder(ByVal Keys As Collection) As IRecordBuilder
 End Function
 
 '===============================================================================
