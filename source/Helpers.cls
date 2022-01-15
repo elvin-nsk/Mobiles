@@ -47,15 +47,15 @@ Public Function tryGetExcelFile() As IEither
   SaveSetting AppName, Section, Key, Path
 End Function
 
-Public Function tryBindMainTable(ByVal File As IFileSpec, _
-                                 ByVal NameIsPrimaryKey As Boolean, _
-                                 ByVal ReadOnly As Boolean _
-                                 ) As IEither
+Public Function tryBindMobilesTable(ByVal File As IFileSpec, _
+                                    ByVal NameIsPrimaryKey As Boolean, _
+                                    ByVal ReadOnly As Boolean _
+                                    ) As IEither
   Dim Table As ITableFile
   Set Table = OpenTableFileOrNotify _
       (File:=File, SheetName:=Mobiles.MainTableName, ReadOnly:=ReadOnly)
   If Table Is Nothing Then
-    Set tryBindMainTable = Either.Create
+    Set tryBindMobilesTable = Either.Create
     Exit Function
   End If
   
@@ -69,7 +69,7 @@ Public Function tryBindMainTable(ByVal File As IFileSpec, _
     .WithKey "SubCount3", 7
     .WithKey "SubCount4", 8
     '.WithUnboundKey "Valid"
-    Set tryBindMainTable = Either.Create(.Build)
+    Set tryBindMobilesTable = Either.Create(.Build)
   End With
 End Function
 
@@ -94,18 +94,18 @@ Public Function tryBindCategoriesTable(ByVal File As IFileSpec) As IEither
   End With
 End Function
 
-Public Function tryBindSubTable(ByVal File As IFileSpec) As IEither
+Public Function tryBindAdditionalBlocksTable(ByVal File As IFileSpec) As IEither
   Dim Table As ITableFile
   Set Table = OpenTableFileOrNotify _
-      (File:=File, SheetName:=Mobiles.SubTableName, ReadOnly:=True)
+      (File:=File, SheetName:=Mobiles.AdditionalBlocksTableName, ReadOnly:=True)
   If Table Is Nothing Then
-    Set tryBindSubTable = Either.Create
+    Set tryBindAdditionalBlocksTable = Either.Create
     Exit Function
   End If
   With RecordListToTableBinder.Builder(Table)
     .WithPrimaryKey "Column", 1
     .WithKey "Name", 2
-    Set tryBindSubTable = Either.Create(.Build)
+    Set tryBindAdditionalBlocksTable = Either.Create(.Build)
   End With
 End Function
 

@@ -14,7 +14,7 @@ Const RELEASE As Boolean = False
 
 Public Const MainTableName As String = "Чек-лист"
 Public Const CategoriesTableName As String = "Категории"
-Public Const SubTableName As String = "Виды"
+Public Const AdditionalBlocksTableName As String = "Виды"
 Public Const SizesTableName As String = "Размеры"
 
 Public Const DebugMobilesRootRepalceFrom As String = "C:\МК\"
@@ -118,7 +118,8 @@ End Sub
 
 Private Sub testWidth()
   ActiveDocument.Unit = cdrMillimeter
-  ActivePage.SizeWidth = 30000
+  ActivePage.SizeWidth = 45720 'максимальный размер страницы
+  Debug.Print ConvertUnits(1800, cdrInch, ActiveDocument.Unit) '1800 дюймов
 End Sub
 
 Private Sub testRecordBuilder()
@@ -260,6 +261,45 @@ Sub testADODB()
   
   Connection.Close
 
+End Sub
+
+Private Sub testBlock()
+  
+  Dim Models As New Collection
+  With Models
+  End With
+  
+  Dim Caption As New structCaption
+  With Caption
+  End With
+  
+  With Block.Create(Models, Caption, _
+                    10, 0, _
+                    50, 50, _
+                    FreePoint.Create(0, 0))
+  End With
+End Sub
+
+Private Sub testStackable()
+  With Stackable.Create(ActiveLayer.Shapes.First)
+    .PivotX = 10
+    .PivotY = 5
+    Debug.Assert .PivotX = 10
+    Debug.Assert .PivotY = 5
+    Debug.Print .Width
+    Debug.Print .Height
+  End With
+End Sub
+
+Private Sub testStacker()
+  ActiveDocument.Unit = cdrMillimeter
+  Dim Stackables As New Collection
+  Dim Shape As Shape
+  For Each Shape In ActiveLayer.Shapes
+    Stackables.Add Stackable.Create(Shape)
+  Next Shape
+  Stacker.CreateAndStack Stackables, FreePoint.Create(0, ActivePage.TopY), _
+          , 200, 10, 5
 End Sub
 
 Private Function StubKeys() As Collection

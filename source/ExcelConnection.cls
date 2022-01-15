@@ -63,7 +63,6 @@ Public Function CreateReadOnly( _
 End Function
 
 Private Sub Class_Terminate()
-  On Error Resume Next
   With This
     If Not .RecordSet Is Nothing Then
       Self.ForceSave
@@ -71,7 +70,6 @@ Private Sub Class_Terminate()
     End If
     If Not .Connection Is Nothing Then .Connection.Close
   End With
-  On Error GoTo 0
 End Sub
 
 Friend Function Init( _
