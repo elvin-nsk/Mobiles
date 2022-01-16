@@ -12,21 +12,25 @@ Option Explicit
 
 '===============================================================================
 
+'@Description "Привязка ключа к столбцу"
 Public Function WithKey(ByVal Key As String, _
                         ByVal ColumnToBind As Long _
                         ) As IRecordListToTableBinderBuilder
 End Function
 
+'@Description "Привязка обязательного ключа, если ячейка пустая - строка не добавится"
 Public Function WithMandatoryKey(ByVal Key As String, _
                                  ByVal ColumnToBind As Long _
                                  ) As IRecordListToTableBinderBuilder
 End Function
 
+'@Description "Привязка первичного ключа, может быть только один"
 Public Function WithPrimaryKey(ByVal Key As String, _
                                ByVal ColumnToBind As Long _
                                ) As IRecordListToTableBinderBuilder
 End Function
 
+'@Description "Ключ без привязки, сохраняется в таблицу"
 Public Function WithUnboundKey(ByVal Key As String) As IRecordListToTableBinderBuilder
 End Function
 

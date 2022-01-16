@@ -20,7 +20,7 @@ End Property
 Public Function BuildRecord() As IRecordBuilder
 End Function
 
-Public Function GetFields(ByVal Name As String) As Collection
+Public Function GetFields(ByVal Name As String) As IList
 End Function
 
 Public Property Get Count() As Long

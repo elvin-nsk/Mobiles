@@ -1,7 +1,7 @@
 Attribute VB_Name = "lib_elvin"
 '===============================================================================
 ' Модуль           : lib_elvin
-' Версия           : 2021.12.19
+' Версия           : 2022.01.16
 ' Автор            : elvin-nsk (me@elvin.nsk.ru)
 ' Использован код  : dizzy (из макроса CtC), Alex Vakulenko
 '                    и др.
@@ -65,7 +65,7 @@ Public Sub BoostStart(Optional ByVal UnDo$ = "", Optional ByVal Optimize = True)
   If Not ActiveDocument Is Nothing Then
     With ActiveDocument
       .SaveSettings
-      .PreserveSelection = False
+      '.PreserveSelection = False
       .Unit = cdrMillimeter
       .WorldScale = 1
       .ReferencePoint = cdrCenter
@@ -78,7 +78,7 @@ Public Sub BoostFinish(Optional ByVal EndUndoGroup = True)
   If Not ActiveDocument Is Nothing Then
     With ActiveDocument
       .RestoreSettings
-      .PreserveSelection = True
+      '.PreserveSelection = True
       If EndUndoGroup Then .EndCommandGroup
     End With
     ActiveWindow.Refresh
@@ -831,6 +831,7 @@ Public Sub AssignUnknown(ByRef Destination As Variant, ByRef Value As Variant)
   End If
 End Sub
 
+'устарело
 Public Sub CopyCollection(ByVal Source As Collection, _
                           ByVal Target As Collection)
   Dim Element As Variant
@@ -839,21 +840,38 @@ Public Sub CopyCollection(ByVal Source As Collection, _
   Next Element
 End Sub
 
+Public Function GetCollectionCopy(ByVal Source As Collection) As Collection
+  Set GetCollectionCopy = New Collection
+  Dim Item As Variant
+  For Each Item In Source
+    GetCollectionCopy.Add Item
+  Next Item
+End Function
+
+Public Function GetCollectionFromDictionary _
+                 (ByVal Dictionary As Dictionary) As Collection
+  Set GetCollectionFromDictionary = New Collection
+  Dim Item As Variant
+  For Each Item In Dictionary.Items
+    GetCollectionFromDictionary.Add Item
+  Next Item
+End Function
+
 'https://www.codegrepper.com/code-examples/vb/excel+vba+generate+guid+uuid
 Public Function CreateGUID(Optional Lowercase As Boolean, _
                            Optional Parens As Boolean _
                            ) As String
-  Dim K As Long, H As String
+  Dim k As Long, H As String
   CreateGUID = VBA.Space(36)
-  For K = 1 To VBA.Len(CreateGUID)
+  For k = 1 To VBA.Len(CreateGUID)
     VBA.Randomize
-    Select Case K
+    Select Case k
       Case 9, 14, 19, 24: H = "-"
       Case 15:            H = "4"
       Case 20:            H = VBA.Hex(VBA.Rnd * 3 + 8)
       Case Else:          H = VBA.Hex(VBA.Rnd * 15)
     End Select
-    Mid(CreateGUID, K, 1) = H
+    Mid(CreateGUID, k, 1) = H
   Next
   If Lowercase Then CreateGUID = VBA.LCase$(CreateGUID)
   If Parens Then CreateGUID = "{" & CreateGUID & "}"
@@ -1022,3 +1040,5 @@ Private Sub ThrowIfNotCollectionOrArray(ByRef CollectionOrArray As Variant)
   VBA.Err.Raise 13, Source:="lib_elvin", _
                 Description:="Type mismatch: CollectionOrArray должен быть Collection или Array"
 End Sub
+
+

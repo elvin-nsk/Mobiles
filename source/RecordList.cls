@@ -18,8 +18,8 @@ Implements IRecordListFilter
 Private Const CustomError = vbObjectError Or 32
 
 Private Type typeThis
-  Records As Collection
-  Keys As Collection
+  Records As IList
+  Keys As IList
   PrimaryKey As String
   IsKeyFieldSet As Boolean
   RecordFactory As IRecordFactory
@@ -30,13 +30,13 @@ Attribute PendingRecord.VB_VarHelpID = -1
 
 '===============================================================================
 
-Public Function Create(ByVal Keys As Collection, _
+Public Function Create(ByVal Keys As IList, _
                        Optional ByVal PrimaryKey As String, _
                        Optional ByVal RecordFactory As IRecordFactory _
                        ) As IRecordList
   With New RecordList
     Set Create = .Init( _
-      Records:=New Collection, _
+      Records:=List.Create, _
       Keys:=GetKeysAndCheck(Keys), _
       PrimaryKey:=PrimaryKey, _
       RecordFactory:=GetRecordFactory(RecordFactory) _
@@ -44,8 +44,8 @@ Public Function Create(ByVal Keys As Collection, _
   End With
 End Function
 
-Friend Function CreateClone(ByVal Records As Collection, _
-                            ByVal Keys As Collection, _
+Friend Function CreateClone(ByVal Records As IList, _
+                            ByVal Keys As IList, _
                             ByVal PrimaryKey As String, _
                             ByVal RecordFactory As IRecordFactory _
                             ) As IRecordList
@@ -59,8 +59,8 @@ Friend Function CreateClone(ByVal Records As Collection, _
   End With
 End Function
 
-Friend Function Init(ByVal Records As Collection, _
-                     ByVal Keys As Collection, _
+Friend Function Init(ByVal Records As IList, _
+                     ByVal Keys As IList, _
                      ByVal PrimaryKey As String, _
                      ByVal RecordFactory As IRecordFactory _
                      ) As IRecordList
@@ -81,11 +81,11 @@ Private Sub CheckAndSetKeyFieldName(ByVal PrimaryKey As String)
   End With
 End Sub
 
-Private Function GetKeysAndCheck(ByVal Keys As Collection) As Collection
-  Set GetKeysAndCheck = New Collection
+Private Function GetKeysAndCheck(ByVal Keys As IList) As IList
+  Set GetKeysAndCheck = List.Create
   Dim Item As Variant
-  For Each Item In Keys
-    If IsStringElementExists(Item, GetKeysAndCheck) Then
+  For Each Item In Keys.NewEnum
+    If GetKeysAndCheck.Contains(Item) Then
       ThrowDuplicateFieldName
     Else
       GetKeysAndCheck.Add Item
@@ -114,17 +114,17 @@ Private Property Get IRecordList_Count() As Long
 End Property
 
 Private Function IRecordList_KeyExists(ByVal Key As String) As Boolean
-  IRecordList_KeyExists = IsStringElementExists(Key, This.Keys)
+  IRecordList_KeyExists = This.Keys.Contains(Key)
 End Function
 
 Private Function IRecordList_Filter() As IRecordListFilter
   Set IRecordList_Filter = Me
 End Function
 
-Private Function IRecordList_GetFields(ByVal Name As String) As Collection
-  Set IRecordList_GetFields = New Collection
+Private Function IRecordList_GetFields(ByVal Name As String) As IList
+  Set IRecordList_GetFields = List.Create
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     IRecordList_GetFields.Add Record.Field(Name)
   Next Record
 End Function
@@ -132,7 +132,7 @@ End Function
 Private Function IRecordList_PrimaryFieldExists(ByVal Value As Variant) As Boolean
   If Not IsKeyFieldValid(Value) Then ThrowKeyFieldNotPrimitive
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     If Record.Field(This.PrimaryKey) = Value Then
       IRecordList_PrimaryFieldExists = True
       Exit Function
@@ -145,10 +145,7 @@ Private Property Get IRecordList_PrimaryKeySet() As Boolean
 End Property
 
 Private Property Get IRecordList_NewEnum() As EnumHelper
-  With New EnumHelper
-    Set .EnumVariant = This.Records.[_NewEnum]
-    Set IRecordList_NewEnum = .Self
-  End With
+  Set IRecordList_NewEnum = This.Records.NewEnum
 End Property
 
 Private Property Get IRecordList_Record(ByVal NumberOrPrimaryField As Variant) As IRecord
@@ -173,22 +170,19 @@ End Property
 '-------------------------------------------------------------------------------
 
 Private Function IRecordListFilter_Fields _
-                 (ByVal Value As Variant, _
+                 (ByRef PrimitiveOrEnumerable As Variant, _
                   Optional ByVal Key As String) As IRecordList
-  Dim Records As New Collection
-  Dim Record As IRecord
-  For Each Record In This.Records
-    If IsRecordMatch(Record, Value, Key) Then Records.Add Record
-  Next Record
   Set IRecordListFilter_Fields = CreateClone _
-    (Records, This.Keys, This.PrimaryKey, This.RecordFactory)
+    (RecordsMatchUnknown(PrimitiveOrEnumerable, Key, True), _
+     This.Keys, This.PrimaryKey, This.RecordFactory)
 End Function
 
 Private Function IRecordListFilter_FieldsEmpty _
                  (ByVal Key As String) As IRecordList
-  Dim Records As New Collection
+  Dim Records As IList
+  Set Records = List.Create
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     If Record.Field(Key) = "" Then Records.Add Record
   Next Record
   Set IRecordListFilter_FieldsEmpty = CreateClone _
@@ -198,9 +192,10 @@ End Function
 Private Function IRecordListFilter_FieldsLike _
                  (ByVal Pattern As String, _
                   Optional ByVal Key As String) As IRecordList
-  Dim Records As New Collection
+  Dim Records As IList
+  Set Records = List.Create
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     If IsRecordLike(Record, Pattern, Key) Then Records.Add Record
   Next Record
   Set IRecordListFilter_FieldsLike = CreateClone _
@@ -208,22 +203,19 @@ Private Function IRecordListFilter_FieldsLike _
 End Function
 
 Private Function IRecordListFilter_NotFields _
-                 (ByVal Value As Variant, _
+                 (ByRef PrimitiveOrEnumerable As Variant, _
                   Optional ByVal Key As String) As IRecordList
-  Dim Records As New Collection
-  Dim Record As IRecord
-  For Each Record In This.Records
-    If Not IsRecordMatch(Record, Value, Key) Then Records.Add Record
-  Next Record
-  Set IRecordListFilter_NotFields = CreateClone _
-    (Records, This.Keys, This.PrimaryKey, This.RecordFactory)
+ Set IRecordListFilter_NotFields = CreateClone _
+    (RecordsMatchUnknown(PrimitiveOrEnumerable, Key, False), _
+     This.Keys, This.PrimaryKey, This.RecordFactory)
 End Function
 
 Private Function IRecordListFilter_NotFieldsEmpty _
                  (ByVal Key As String) As IRecordList
-  Dim Records As New Collection
+  Dim Records As IList
+  Set Records = List.Create
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     If Not Record.Field(Key) = "" Then Records.Add Record
   Next Record
   Set IRecordListFilter_NotFieldsEmpty = CreateClone _
@@ -233,9 +225,10 @@ End Function
 Private Function IRecordListFilter_NotFieldsLike _
                  (ByVal Pattern As String, _
                   Optional ByVal Key As String) As IRecordList
-  Dim Records As New Collection
+  Dim Records As IList
+  Set Records = List.Create
   Dim Record As IRecord
-  For Each Record In This.Records
+  For Each Record In This.Records.NewEnum
     If Not IsRecordLike(Record, Pattern, Key) Then Records.Add Record
   Next Record
   Set IRecordListFilter_NotFieldsLike = CreateClone _
@@ -285,26 +278,59 @@ Private Function FindRecordIndex(ByVal NumberOrPrimaryField As Variant) As Long
   End If
 End Function
 
-Private Function IsStringElementExists(ByVal Element As String, _
-                                       ByVal Collection As Collection _
-                                       ) As Boolean
-  Dim Item As Variant
-  For Each Item In Collection
-    If Item = Element Then
-      IsStringElementExists = True
-      Exit Function
+Private Function RecordsMatchUnknown(ByRef PrimitiveOrEnumerable As Variant, _
+                                     ByVal Key As String, _
+                                     ByVal Match As Boolean _
+                                     ) As IList
+  Set RecordsMatchUnknown = List.Create
+  Dim Record As IRecord
+  For Each Record In This.Records.NewEnum
+    If RecordMatchUnknown(Record, PrimitiveOrEnumerable, Key) = Match Then
+      RecordsMatchUnknown.Add Record
     End If
-  Next Item
+  Next Record
 End Function
 
-Private Function IsRecordMatch(ByVal Record As IRecord, _
-                               ByVal Value As Variant, _
-                               ByVal Key As String _
-                               ) As Boolean
-  If Key = "" Then
-    IsRecordMatch = Record.Contains(Value)
+Private Function RecordMatchUnknown(ByVal Record As IRecord, _
+                                    ByRef PrimitiveOrEnumerable As Variant, _
+                                    ByVal Key As String _
+                                    ) As Boolean
+  Dim Item As Variant
+  If VBA.IsArray(PrimitiveOrEnumerable) Or _
+     TypeOf PrimitiveOrEnumerable Is VBA.Collection Then
+    For Each Item In PrimitiveOrEnumerable
+      If IsRecordMatchValue(Record, Item, Key) Then
+        RecordMatchUnknown = True
+        Exit Function
+      End If
+    Next Item
+  ElseIf TypeOf PrimitiveOrEnumerable Is Scripting.Dictionary Then
+    For Each Item In PrimitiveOrEnumerable.Items
+      If IsRecordMatchValue(Record, Item, Key) Then
+        RecordMatchUnknown = True
+        Exit Function
+      End If
+    Next Item
+  ElseIf TypeOf PrimitiveOrEnumerable Is IList Then
+    For Each Item In PrimitiveOrEnumerable.NewEnum
+      If IsRecordMatchValue(Record, Item, Key) Then
+        RecordMatchUnknown = True
+        Exit Function
+      End If
+    Next Item
   Else
-    IsRecordMatch = (Record.Field(Key) = Value)
+    RecordMatchUnknown = IsRecordMatchValue(Record, PrimitiveOrEnumerable, Key)
+  End If
+End Function
+
+Private Function IsRecordMatchValue(ByVal Record As IRecord, _
+                                    ByVal Value As Variant, _
+                                    ByVal Key As String _
+                                    ) As Boolean
+  If Key = "" Then
+    IsRecordMatchValue = Record.Contains(Value)
+  Else
+    IsRecordMatchValue = (Record.Field(Key) = Value)
   End If
 End Function
 

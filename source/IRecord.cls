@@ -21,7 +21,7 @@ End Property
 Public Property Set Field(ByVal Key As String, RHS As Variant)
 End Property
 
-Public Property Get Keys() As Collection
+Public Property Get Keys() As IList
 End Property
 
 Public Function Exists(ByVal Key As String) As Boolean

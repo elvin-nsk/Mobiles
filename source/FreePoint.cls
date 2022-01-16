@@ -7,6 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
+'@ModuleDescription "Low-coupled version from Core framework"
 '@PredeclaredId
 Option Explicit
 
@@ -55,10 +56,10 @@ End Sub
 
 Private Sub IPoint_RotateAroundPoint(ByVal RotationCenter As IPoint, ByVal Angle As Double)
   With RotationCenter
-    This.X = (This.X - .X) * VBA.Cos(Math.DegToRad(Angle)) - _
-             (This.Y - .Y) * VBA.Sin(Math.DegToRad(Angle)) + .X
-    This.Y = (This.X - .X) * VBA.Sin(Math.DegToRad(Angle)) + _
-             (This.Y - .Y) * VBA.Cos(Math.DegToRad(Angle)) + .Y
+    This.X = (This.X - .X) * VBA.Cos(DegToRad(Angle)) - _
+             (This.Y - .Y) * VBA.Sin(DegToRad(Angle)) + .X
+    This.Y = (This.X - .X) * VBA.Sin(DegToRad(Angle)) + _
+             (This.Y - .Y) * VBA.Cos(DegToRad(Angle)) + .Y
   End With
 End Sub
 
@@ -69,18 +70,22 @@ End Property
 Private Property Get IPoint_X() As Double
   IPoint_X = This.X
 End Property
-Private Property Let IPoint_X(ByVal Value As Double)
-  This.X = Value
+Private Property Let IPoint_X(ByVal RHS As Double)
+  This.X = RHS
 End Property
 
 Private Property Get IPoint_Y() As Double
   IPoint_Y = This.Y
 End Property
-Private Property Let IPoint_Y(ByVal Value As Double)
-  This.Y = Value
+Private Property Let IPoint_Y(ByVal RHS As Double)
+  This.Y = RHS
 End Property
 
 '===============================================================================
+
+Private Function DegToRad(Degree As Double) As Double
+  DegToRad = Degree * 3.14159265358979 / 180
+End Function
 
 Private Property Get Self() As IPoint
   Set Self = Me

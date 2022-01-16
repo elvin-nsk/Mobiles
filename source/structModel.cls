@@ -16,6 +16,6 @@ Public Count As Long
 
 '===============================================================================
 
-Public Property Get Self() As structMobile
+Public Property Get Self() As structModel
   Set Self = Me
 End Property

@@ -25,11 +25,11 @@ Private Type typeThis
   RecordList As IRecordList
   Table As ITableFile
   Bindings As Scripting.Dictionary
-  RecordsToRowsCollation As Collection
+  RecordsToRowsCollation As IList
   PrimaryKey As String
-  MandatoryKeys As Collection
+  MandatoryKeys As IList
   IsKeyFieldSet As Boolean
-  Keys As Collection
+  Keys As IList
   RecordFactory As IRecordFactory
 End Type
 Private This As typeThis
@@ -62,10 +62,10 @@ Friend Function Init(ByVal Table As ITableFile, _
   With This
     Set .Table = Table
     Set .Bindings = New Scripting.Dictionary
-    Set .RecordsToRowsCollation = New Collection
+    Set .RecordsToRowsCollation = List.Create
     Set .RecordFactory = RecordFactory
-    Set .Keys = New Collection
-    Set .MandatoryKeys = New Collection
+    Set .Keys = List.Create
+    Set .MandatoryKeys = List.Create
   End With
   Set Init = Me
 End Function
@@ -180,7 +180,7 @@ End Function
 Private Function IsMandatoryFieldsEmpty(ByVal Row As Long) As Boolean
   With This
     Dim Key As Variant
-    For Each Key In .MandatoryKeys
+    For Each Key In .MandatoryKeys.NewEnum
       If .Table.Cell(Row, .Bindings(Key)) = "" Then
         IsMandatoryFieldsEmpty = True
         Exit Function

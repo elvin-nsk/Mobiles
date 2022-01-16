@@ -1,21 +1,32 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
 ' Макрос           : Mobiles
-' Версия           : 2022.01.05
+' Версия           : 2022.01.17
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
 
 Option Explicit
 
-Const RELEASE As Boolean = False
+Const RELEASE As Boolean = True
 
 '===============================================================================
 
-Public Const MainTableName As String = "Чек-лист"
+Public Const ModelsTableName As String = "Чек-лист"
 Public Const CategoriesTableName As String = "Категории"
 Public Const AdditionalBlocksTableName As String = "Виды"
 Public Const SizesTableName As String = "Размеры"
+
+Public Const SizesDelimiterSymbol As String = ","
+Public Const SizesMultiplierSymbol As String = "x"
+Public Const CaptionsNewLineSymbol As String = ";"
+
+Public Const SubColumn1 As Long = 5
+Public Const SubColumn2 As Long = 6
+Public Const SubColumn3 As Long = 7
+Public Const SubColumn4 As Long = 8
+
+Public Const CaptionsColor As String = "CMYK,USER,0,0,0,100"
 
 Public Const DebugMobilesRootRepalceFrom As String = "C:\МК\"
 Public Const DebugMobilesRootRepalceTo As String = "e:\WORK\макросы Corel\на заказ\Дмитрий Шмыга\Mobiles\материалы\2021-11-29\Data\"
@@ -39,14 +50,14 @@ Sub CountMobilesToTable()
   End With
   
   Dim Binder As IRecordListToTableBinder
-  With Helpers.tryBindMainTable _
+  With Helpers.tryBindModelsTable _
                (File:=File, NameIsPrimaryKey:=True, ReadOnly:=False)
     If .IsError Then Exit Sub
     Set Binder = .SuccessValue
   End With
    
-  Helpers.ResetMobilesCount Binder.RecordList
-  Helpers.CountMobilesInShapes Binder.RecordList, ActiveSelectionRange
+  Helpers.ResetModelsCount Binder.RecordList
+  Helpers.CountModelsInShapes Binder.RecordList, ActiveSelectionRange
   
 Finally:
   Set Binder = Nothing
@@ -62,38 +73,76 @@ Sub CreateSheetsFromTable()
 
   If RELEASE Then On Error GoTo Catch
   
+  Dim Log As New Logger
+  
   Dim File As IFileSpec
   With Helpers.tryGetExcelFile
     If .IsError Then Exit Sub
     Set File = .SuccessValue
   End With
   
-  Dim Binder As IRecordListToTableBinder
-  With Helpers.tryBindMainTable _
+  Dim Models As IRecordList
+  With Helpers.tryBindModelsTable _
                (File:=File, NameIsPrimaryKey:=False, ReadOnly:=True)
     If .IsError Then Exit Sub
-    Set Binder = .SuccessValue
+    Set Models = .SuccessValue.RecordList
   End With
-  #If Not RELEASE Then
-    Helpers.DebugPathsReplace Binder.RecordList
-  #End If
+  '#If Not RELEASE Then
+    Helpers.DebugPathsReplace Models
+  '#End If
   
-  'Helpers.ValidateMainTable Binder.RecordList
+  Dim Categories As IRecordList
+  With Helpers.tryBindCategoriesTable(File)
+    If .IsError Then Exit Sub
+    Set Categories = .SuccessValue.RecordList
+  End With
   
-  lib_elvin.BoostStart , RELEASE
+  Dim AdditionalBlocks As IRecordList
+  With Helpers.tryBindAdditionalBlocksTable(File)
+    If .IsError Then Exit Sub
+    Set AdditionalBlocks = .SuccessValue.RecordList
+  End With
   
-  'With CompositeSheet.Create(Binder.RecordList, RELEASE)
-  '  If .FailedFiles.Count > 0 Then
-  '    Helpers.Report .FailedFiles
-  '  End If
-  'End With
-    
-  Debug.Print Binder.RecordList.Count
-  Debug.Assert Binder.RecordList(5)("File") <> ""
+  Dim Sizes As IRecordList
+  With Helpers.tryBindSizesTable(File)
+    If .IsError Then Exit Sub
+    Set Sizes = .SuccessValue.RecordList
+  End With
+  
+  Optimization = RELEASE
+  
+  Dim PBar As IProgressBar
+  Set PBar = ProgressBar.CreateNumeric(Categories.Count)
+  PBar.Cancellable = True
+  
+  Dim Category As IRecord
+  For Each Category In Categories.NewEnum
+  
+    With CategorySheet.CreateAndCompose( _
+           Category:=Category, _
+           Models:=Models, _
+           AdditionalBlocks:=AdditionalBlocks, _
+           Sizes:=Sizes _
+         )
+      If .IsError Then
+        Log.Add "Мобайлов категории " & Category!Name & " не найдено"
+        Exit Sub
+      End If
+      With .SuccessValue
+        If .FailedFiles.Count > 0 Then
+          Helpers.LogFailedFiles .FailedFiles, Log
+        End If
+      End With
+    End With
+    PBar.Update
+    If PBar.Cancelled Then GoTo Finally
+  
+  Next Category
   
 Finally:
-  Set Binder = Nothing
-  lib_elvin.BoostFinish
+  Optimization = False
+  Application.Refresh
+  Log.Check "Информация"
   Exit Sub
 
 Catch:
@@ -105,16 +154,6 @@ End Sub
 '===============================================================================
 ' тесты
 '===============================================================================
-
-Private Sub testExcelEditLateBinding()
-  Dim App As Object
-  Set App = VBA.CreateObject("Excel.Application")
-  Dim WB As Object
-  Set WB = App.Workbooks.Open("e:\temp\123.xlsx")
-  WB.ActiveSheet.Cells(1, 1) = "Late"
-  WB.Save
-  WB.Close
-End Sub
 
 Private Sub testWidth()
   ActiveDocument.Unit = cdrMillimeter
@@ -166,7 +205,8 @@ Private Sub testRecordListWithPrimaryKey()
     .BuildRecord.WithField("Поле1", "Петя").WithField("Поле2", "Neo").Build
     .BuildRecord.WithField("Поле1", "Джон").WithField("Поле2", "Trinity").Build
     .BuildRecord.WithField("Поле1", "Джонсон").WithField("Поле2", "Trinity").Build
-    Debug.Assert .Count = 4
+    .BuildRecord.WithField("Поле1", "Серёжа").WithField("Поле2", "").Build
+    Debug.Assert .Count = 5
     Debug.Assert .RecordExists("Джон") = True
     Debug.Assert .RecordExists("Хамелеон") = False
     Debug.Assert .PrimaryKeySet = True
@@ -176,6 +216,9 @@ Private Sub testRecordListWithPrimaryKey()
     Debug.Assert .Record("Джон")("Поле2") = "Trinity"
     Debug.Assert .Record(1).ContainsLike("Знач*") = True
     Debug.Assert .Filter.FieldsLike("Джон*", "Поле1").Count = 2
+    Debug.Assert .Filter.Fields(Array("Значение", "Trinity"), "Поле2").Count = 3
+    Debug.Assert .Filter.NotFields(Array("Джонсон", "Trinity")).Count = 3
+    Debug.Assert .Filter.NotFieldsEmpty("Поле2").Count = 4
   End With
 End Sub
 
@@ -218,7 +261,7 @@ Private Sub testExcelConnection()
   
 End Sub
 
-Sub testADODB()
+Private Sub testADODB()
 
   Const adLockOptimistic = 3
   Const adLockReadOnly = 1
@@ -265,18 +308,19 @@ End Sub
 
 Private Sub testBlock()
   
-  Dim Models As New Collection
-  With Models
+  Dim Models As IList
+  With List.Create
+    Set Models = .Self
   End With
   
   Dim Caption As New structCaption
   With Caption
   End With
   
-  With Block.Create(Models, Caption, _
-                    10, 0, _
-                    50, 50, _
-                    FreePoint.Create(0, 0))
+  With CategorySheetBlock.Create(Models, Caption, _
+                                 10, 0, _
+                                 50, 50, _
+                                 FreePoint.Create(0, 0))
   End With
 End Sub
 
@@ -299,12 +343,38 @@ Private Sub testStacker()
     Stackables.Add Stackable.Create(Shape)
   Next Shape
   Stacker.CreateAndStack Stackables, FreePoint.Create(0, ActivePage.TopY), _
-          , 200, 10, 5
+          , 0, 10, 5
 End Sub
 
-Private Function StubKeys() As Collection
-  Set StubKeys = New Collection
-  StubKeys.Add "Поле1"
-  StubKeys.Add "Поле2"
-  StubKeys.Add "3"
+Private Sub testList()
+  With List.Create
+    .Add "123"
+    Debug.Assert .Item(1) = "123"
+  End With
+  With List.CreateFrom(1, 2, 3)
+    Debug.Assert .Item(2) = 2
+  End With
+End Sub
+
+Private Sub testLogger()
+  With New Logger
+    .Add "123" & vbCrLf & "Вася"
+    .Check
+  End With
+End Sub
+
+Private Sub testCreateCaption()
+  With New structCaption
+    .Line1 = "Магнитные мобайлы"
+    .Line2 = "Печать на матовой пленке + матовая ламинация" & vbCrLf & _
+             "+ накатать на магнитную основу"
+    .Color = CaptionsColor
+    .FontSize = 50
+    .Line1Bold = True
+    Helpers.CreateCaption .Self
+  End With
+End Sub
+
+Private Function StubKeys() As IList
+  Set StubKeys = List.CreateFrom("Поле1", "Поле2", "3")
 End Function

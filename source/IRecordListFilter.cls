@@ -12,7 +12,7 @@ Option Explicit
 
 '===============================================================================
 
-Public Function Fields(ByVal Value As Variant, _
+Public Function Fields(ByRef PrimitiveOrEnumerable As Variant, _
                        Optional ByVal Key As String) As IRecordList
 End Function
 
@@ -23,7 +23,7 @@ End Function
 Public Function FieldsEmpty(ByVal Key As String) As IRecordList
 End Function
 
-Public Function NotFields(ByVal Value As Variant, _
+Public Function NotFields(ByRef PrimitiveOrEnumerable As Variant, _
                           Optional ByVal Key As String) As IRecordList
 End Function
 

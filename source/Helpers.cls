@@ -47,15 +47,15 @@ Public Function tryGetExcelFile() As IEither
   SaveSetting AppName, Section, Key, Path
 End Function
 
-Public Function tryBindMobilesTable(ByVal File As IFileSpec, _
-                                    ByVal NameIsPrimaryKey As Boolean, _
-                                    ByVal ReadOnly As Boolean _
-                                    ) As IEither
+Public Function tryBindModelsTable(ByVal File As IFileSpec, _
+                                   ByVal NameIsPrimaryKey As Boolean, _
+                                   ByVal ReadOnly As Boolean _
+                                   ) As IEither
   Dim Table As ITableFile
   Set Table = OpenTableFileOrNotify _
-      (File:=File, SheetName:=Mobiles.MainTableName, ReadOnly:=ReadOnly)
+      (File:=File, SheetName:=Mobiles.ModelsTableName, ReadOnly:=ReadOnly)
   If Table Is Nothing Then
-    Set tryBindMobilesTable = Either.Create
+    Set tryBindModelsTable = Either.Create
     Exit Function
   End If
   
@@ -64,12 +64,11 @@ Public Function tryBindMobilesTable(ByVal File As IFileSpec, _
     If NameIsPrimaryKey Then .WithPrimaryKey "Name", 2 Else .WithKey "Name", 2
     .WithKey "Count", 3
     .WithMandatoryKey "File", 4
-    .WithKey "SubCount1", 5
-    .WithKey "SubCount2", 6
-    .WithKey "SubCount3", 7
-    .WithKey "SubCount4", 8
-    '.WithUnboundKey "Valid"
-    Set tryBindMobilesTable = Either.Create(.Build)
+    .WithKey "SubCount1", Mobiles.SubColumn1
+    .WithKey "SubCount2", Mobiles.SubColumn2
+    .WithKey "SubCount3", Mobiles.SubColumn3
+    .WithKey "SubCount4", Mobiles.SubColumn4
+    Set tryBindModelsTable = Either.Create(.Build)
   End With
 End Function
 
@@ -83,13 +82,11 @@ Public Function tryBindCategoriesTable(ByVal File As IFileSpec) As IEither
   End If
   With RecordListToTableBinder.Builder(Table)
     .WithPrimaryKey "Name", 1
-    .WithKey "Sizes", 2
+    .WithKey "Size", 2
     .WithKey "Line1", 3
     .WithKey "Line2", 4
     .WithKey "MaxBlocksInWidth", 5
-    .WithKey "MaxBlocksInHeight", 6
-    .WithKey "MaxPlacesInWidth", 7
-    .WithKey "MaxPlacesInHeight", 8
+    .WithKey "MaxPlacesInWidth", 6
     Set tryBindCategoriesTable = Either.Create(.Build)
   End With
 End Function
@@ -142,28 +139,15 @@ ErrorHandler:
   On Error GoTo 0
 End Function
 
-Public Sub ResetMobilesCount(ByVal RecordList As IRecordList)
+Public Sub ResetModelsCount(ByVal RecordList As IRecordList)
   Dim Record As IRecord
   For Each Record In RecordList.NewEnum
     Record.Field("Count") = 0
   Next Record
 End Sub
 
-Public Sub ValidateMainTable(ByVal RecordList As IRecordList)
-  Dim Record As IRecord
-  For Each Record In RecordList.NewEnum
-    ValidateMainTableRecord Record
-  Next Record
-End Sub
-
-Public Sub ValidateMainTableRecord(ByVal Record As IRecord)
-  If Record.Field("Size") = "" Then Exit Sub
-  If Record.Field("File") = "" Then Exit Sub
-  Record.Field("Valid") = True
-End Sub
-
-Public Sub CountMobilesInShapes(ByVal RecordList As IRecordList, _
-                                ByVal Shapes As ShapeRange)
+Public Sub CountModelsInShapes(ByVal RecordList As IRecordList, _
+                               ByVal Shapes As ShapeRange)
   Dim PBar As IProgressBar
   Set PBar = ProgressBar.CreateNumeric(Shapes.Count)
   PBar.Caption = "Подсчёт мобайлов..."
@@ -180,6 +164,27 @@ Public Sub CountMobilesInShapes(ByVal RecordList As IRecordList, _
   Next Shape
 End Sub
 
+Public Function CreateCaption(ByVal Caption As structCaption) As Shape
+  With Caption
+    Dim Text As String
+    Text = .Line1
+    If Not .Line2 = "" Then
+      Text = Text & vbCrLf & _
+             VBA.Replace(.Line2, Mobiles.CaptionsNewLineSymbol, vbCrLf)
+    End If
+    Set CreateCaption = ActiveLayer.CreateArtisticText( _
+                          Left:=0, Bottom:=0, _
+                          Text:=Text, _
+                          Size:=.FontSize, _
+                          Italic:=cdrTrue _
+                        )
+    If .Line1Bold Then
+      CreateCaption.Text.Story.Lines(1).Style = cdrBoldItalicFontStyle
+    End If
+    CreateCaption.Fill.ApplyUniformFill CreateColor(.Color)
+  End With
+End Function
+
 Public Sub DebugPathsReplace(ByVal Records As IRecordList)
   Const RecordName As String = "File"
   Dim Record As IRecord
@@ -191,12 +196,10 @@ Public Sub DebugPathsReplace(ByVal Records As IRecordList)
   Next Record
 End Sub
 
-Public Sub Report(ByVal FailedFiles As Collection)
-  Dim Message As String
-  Message = "Следующие файлы не найдены:" & vbCrLf
+Public Sub LogFailedFiles(ByVal FailedFiles As IList, _
+                          ByVal Log As Logger)
   Dim i As Long
   For i = 1 To FailedFiles.Count
-    Message = Message & FailedFiles(i) & vbCrLf
+    Log.Add "Не найден или не открывается файл " & FailedFiles(i)
   Next i
-  VBA.MsgBox Message, vbInformation, "Ошибка импорта"
 End Sub

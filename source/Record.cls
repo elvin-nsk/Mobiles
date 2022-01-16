@@ -22,28 +22,28 @@ Private Type typeThis
   Encapsulated As Scripting.Dictionary
   Changed As Boolean
   BuilderEvents As IRecordBuilderEvents
-  BuilderAssignedKeys As Collection
+  BuilderAssignedKeys As IList
 End Type
 Private This As typeThis
 
 '===============================================================================
 
 Private Function IRecordFactory_Builder _
-                 (ByVal Keys As Collection) As IRecordBuilder
+                 (ByVal Keys As IList) As IRecordBuilder
   With New Record
     Set IRecordFactory_Builder = .Init(Keys)
   End With
 End Function
 
-Friend Function Init(ByVal Keys As Collection) As IRecordBuilder
+Friend Function Init(ByVal Keys As IList) As IRecordBuilder
   With This
     Set .Encapsulated = New Scripting.Dictionary
     Dim Item As Variant
-    For Each Item In Keys
+    For Each Item In Keys.NewEnum
       .Encapsulated.Add Item, Empty
     Next Item
     Set .BuilderEvents = New IRecordBuilderEvents
-    Set .BuilderAssignedKeys = New Collection
+    Set .BuilderAssignedKeys = List.Create
   End With
   Set Init = Me
 End Function
@@ -111,8 +111,8 @@ Private Property Set IRecord_Field(ByVal Key As String, RHS As Variant)
   This.Changed = True
 End Property
 
-Private Property Get IRecord_Keys() As Collection
-  Set IRecord_Keys = New Collection
+Private Property Get IRecord_Keys() As IList
+  Set IRecord_Keys = List.Create
   Dim Key As Variant
   For Each Key In This.Encapsulated.Keys
     IRecord_Keys.Add Key
@@ -131,7 +131,7 @@ End Property
 
 Private Sub CheckAlreadyAssigned(ByVal Key As String)
   Dim Item As Variant
-  For Each Item In This.BuilderAssignedKeys
+  For Each Item In This.BuilderAssignedKeys.NewEnum
     If Item = Key Then ThrowFieldAlreadySet Key
   Next Item
 End Sub
