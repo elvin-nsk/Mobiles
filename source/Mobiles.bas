@@ -87,9 +87,9 @@ Sub CreateSheetsFromTable()
     If .IsError Then Exit Sub
     Set Models = .SuccessValue.RecordList
   End With
-  '#If Not RELEASE Then
+  #If Not RELEASE Then
     Helpers.DebugPathsReplace Models
-  '#End If
+  #End If
   
   Dim Categories As IRecordList
   With Helpers.tryBindCategoriesTable(File)
