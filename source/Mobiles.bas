@@ -87,9 +87,7 @@ Sub CreateSheetsFromTable()
     If .IsError Then Exit Sub
     Set Models = .SuccessValue.RecordList
   End With
-  #If Not RELEASE Then
-    Helpers.DebugPathsReplace Models
-  #End If
+  'Helpers.DebugPathsReplace Models
   
   Dim Categories As IRecordList
   With Helpers.tryBindCategoriesTable(File)
@@ -339,7 +337,7 @@ Private Sub testStacker()
     Stackables.Add Stackable.Create(Shape)
   Next Shape
   Stacker.CreateAndStack Stackables, FreePoint.Create(0, ActivePage.TopY), _
-          , 0, 10, 5
+          3, 0, 10, 5
 End Sub
 
 Private Sub testList()
