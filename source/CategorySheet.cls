@@ -78,6 +78,12 @@ Friend Function Init( _
     Set .FailedFiles = List.Create
     ImportAndSortModels
     
+    If .Blocks.Count = 0 Then
+      .Document.Close
+      Set Init = Either.Create
+      Exit Function
+    End If
+    
     CalculateSheetSizesAndSpaces
     ComposeSheet
     

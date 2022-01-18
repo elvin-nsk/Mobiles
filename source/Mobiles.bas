@@ -1,7 +1,7 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
 ' Макрос           : Mobiles
-' Версия           : 2022.01.17
+' Версия           : 2022.01.18
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
@@ -126,13 +126,9 @@ Sub CreateSheetsFromTable()
          )
       If .IsError Then
         Log.Add "Мобайлов категории " & Category!Name & " не найдено"
-        Exit Sub
+      ElseIf .SuccessValue.FailedFiles.Count > 0 Then
+        Helpers.LogFailedFiles .SuccessValue.FailedFiles, Log
       End If
-      With .SuccessValue
-        If .FailedFiles.Count > 0 Then
-          Helpers.LogFailedFiles .FailedFiles, Log
-        End If
-      End With
     End With
     PBar.Update
     If PBar.Cancelled Then GoTo Finally
