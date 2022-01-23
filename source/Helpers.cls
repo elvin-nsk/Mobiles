@@ -68,7 +68,33 @@ Public Function tryBindModelsTable(ByVal File As IFileSpec, _
     .WithKey "SubCount2", Mobiles.SubColumn2
     .WithKey "SubCount3", Mobiles.SubColumn3
     .WithKey "SubCount4", Mobiles.SubColumn4
+    .WithKey "ExcludeCount", 9
+    .WithKey "ExcludeSubCount1", 10
+    .WithKey "ExcludeSubCount2", 11
+    .WithKey "ExcludeSubCount3", 12
+    .WithKey "ExcludeSubCount4", 13
     Set tryBindModelsTable = Either.Create(.Build)
+  End With
+End Function
+
+Public Function SecondaryModels _
+                (ByVal SourceModels As IRecordList) As IRecordList
+  If SourceModels.Count = 0 Then Exit Function
+  Set SecondaryModels = SourceModels.GetCopy
+  With SecondaryModels
+    Dim i As Long
+    For i = 1 To .Count
+      .Record(i)("Count") = _
+        CalcCount(.Record(i)("Count"), .Record(i)("ExcludeCount"))
+      .Record(i)("SubCount1") = _
+        CalcCount(.Record(i)("SubCount1"), .Record(i)("ExcludeSubCount1"))
+      .Record(i)("SubCount2") = _
+        CalcCount(.Record(i)("SubCount2"), .Record(i)("ExcludeSubCount2"))
+      .Record(i)("SubCount3") = _
+        CalcCount(.Record(i)("SubCount3"), .Record(i)("ExcludeSubCount3"))
+      .Record(i)("SubCount4") = _
+        CalcCount(.Record(i)("SubCount4"), .Record(i)("ExcludeSubCount4"))
+    Next i
   End With
 End Function
 
@@ -89,6 +115,21 @@ Public Function tryBindCategoriesTable(ByVal File As IFileSpec) As IEither
     .WithKey "MaxPlacesInWidth", 6
     Set tryBindCategoriesTable = Either.Create(.Build)
   End With
+End Function
+
+Public Function PrimaryCategory _
+                (ByVal SourceCategory As IRecord) As IRecord
+  Const Text As String = "СБОРКА"
+  Set PrimaryCategory = SourceCategory.GetCopy
+  PrimaryCategory!Line1 = Text & " — " & PrimaryCategory!Line1
+End Function
+
+Public Function SecondaryCategory _
+                (ByVal SourceCategory As IRecord) As IRecord
+  Const Text As String = "ДОПОЛНИТЕЛЬНАЯ СБОРКА"
+  Set SecondaryCategory = SourceCategory.GetCopy
+  SecondaryCategory!Name = SecondaryCategory!Name & "_ДОП"
+  SecondaryCategory!Line1 = Text & " — " & SecondaryCategory!Line1
 End Function
 
 Public Function tryBindAdditionalBlocksTable(ByVal File As IFileSpec) As IEither
@@ -164,6 +205,28 @@ Public Sub CountModelsInShapes(ByVal RecordList As IRecordList, _
   Next Shape
 End Sub
 
+Public Sub CreateSheetOrNotify _
+           (ByVal Category As IRecord, _
+            ByVal Models As IRecordList, _
+            ByVal AdditionalBlocks As IRecordList, _
+            ByVal Sizes As IRecordList, _
+            ByVal Log As Logger)
+            
+    With CategorySheet.CreateAndCompose( _
+           Category:=Category, _
+           Models:=Models, _
+           AdditionalBlocks:=AdditionalBlocks, _
+           Sizes:=Sizes _
+         )
+      If .IsError Then
+        Log.Add "Мобайлов категории " & Category!Name & " не найдено"
+      ElseIf .SuccessValue.FailedFiles.Count > 0 Then
+        LogFailedFiles .SuccessValue.FailedFiles, Log
+      End If
+    End With
+
+End Sub
+
 Public Function CreateCaption(ByVal Caption As structCaption) As Shape
   With Caption
     Dim Text As String
@@ -203,3 +266,32 @@ Public Sub LogFailedFiles(ByVal FailedFiles As IList, _
     Log.Add "Не найден или не открывается файл " & FailedFiles(i)
   Next i
 End Sub
+
+Public Function IsFieldEmpty(ByVal Field As String) As Boolean
+  IsFieldEmpty = True
+  On Error GoTo ErrorHandler
+  If Field = "" Then Exit Function
+  If Field = "0" Then Exit Function
+  If VBA.CStr(Field) = 0 Then Exit Function
+ErrorHandler:
+  On Error GoTo 0
+  IsFieldEmpty = False
+End Function
+
+Private Function CalcCount(ByVal BaseCount As String, _
+                           ByVal MinusCount As String _
+                           ) As String
+  Dim BaseCountLng As Long
+  BaseCountLng = ToLng(BaseCount)
+  Dim MinusCountLng As Long
+  MinusCountLng = ToLng(MinusCount)
+  Dim ResultLng As Long
+  ResultLng = BaseCountLng - MinusCountLng
+  If ResultLng < 0 Then ResultLng = 0
+  CalcCount = VBA.CStr(ResultLng)
+End Function
+
+Private Function ToLng(ByVal Value As String) As Long
+  If Value = "" Then Exit Function
+  ToLng = VBA.CLng(Value)
+End Function

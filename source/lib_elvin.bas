@@ -857,6 +857,14 @@ Public Function GetCollectionFromDictionary _
   Next Item
 End Function
 
+Public Function GetDictionaryCopy(ByVal Source As Scripting.Dictionary) As Scripting.Dictionary
+  Set GetDictionaryCopy = New Scripting.Dictionary
+  Dim Key As Variant
+  For Each Key In Source.Keys
+    GetDictionaryCopy.Add Key, Source.Item(Key)
+  Next Key
+End Function
+
 'https://www.codegrepper.com/code-examples/vb/excel+vba+generate+guid+uuid
 Public Function CreateGUID(Optional Lowercase As Boolean, _
                            Optional Parens As Boolean _

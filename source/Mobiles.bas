@@ -1,7 +1,7 @@
 Attribute VB_Name = "Mobiles"
 '===============================================================================
 ' Макрос           : Mobiles
-' Версия           : 2022.01.18
+' Версия           : 2022.01.24
 ' Сайт             : https://github.com/elvin-nsk
 ' Автор            : elvin-nsk (me@elvin.nsk.ru, https://vk.com/elvin_macro)
 '===============================================================================
@@ -89,6 +89,9 @@ Sub CreateSheetsFromTable()
   End With
   'Helpers.DebugPathsReplace Models
   
+  Dim SecondaryModels As IRecordList
+  Set SecondaryModels = Helpers.SecondaryModels(Models)
+  
   Dim Categories As IRecordList
   With Helpers.tryBindCategoriesTable(File)
     If .IsError Then Exit Sub
@@ -116,18 +119,20 @@ Sub CreateSheetsFromTable()
   Dim Category As IRecord
   For Each Category In Categories.NewEnum
   
-    With CategorySheet.CreateAndCompose( _
-           Category:=Category, _
-           Models:=Models, _
-           AdditionalBlocks:=AdditionalBlocks, _
-           Sizes:=Sizes _
-         )
-      If .IsError Then
-        Log.Add "Мобайлов категории " & Category!Name & " не найдено"
-      ElseIf .SuccessValue.FailedFiles.Count > 0 Then
-        Helpers.LogFailedFiles .SuccessValue.FailedFiles, Log
-      End If
-    End With
+    Helpers.CreateSheetOrNotify _
+              Category:=Helpers.PrimaryCategory(Category), _
+              Models:=Models, _
+              AdditionalBlocks:=AdditionalBlocks, _
+              Sizes:=Sizes, _
+              Log:=Log
+              
+    Helpers.CreateSheetOrNotify _
+              Category:=Helpers.SecondaryCategory(Category), _
+              Models:=SecondaryModels, _
+              AdditionalBlocks:=AdditionalBlocks, _
+              Sizes:=Sizes, _
+              Log:=Log
+    
     PBar.Update
     If PBar.Cancelled Then GoTo Finally
   
@@ -173,6 +178,11 @@ Private Sub testRecordBuilder()
     Debug.Assert .Field("Поле1") = 555
     Debug.Assert .Field("Поле2") = "other"
     Debug.Assert .IsChanged = True
+    Dim RecCopy As IRecord
+    Set RecCopy = .GetCopy
+    Debug.Assert RecCopy.Field("Поле1") = 555
+    Debug.Assert RecCopy.Field("Поле2") = "other"
+    Debug.Assert RecCopy.IsChanged = False
   End With
 End Sub
 
@@ -190,6 +200,13 @@ Private Sub testRecordList()
     Debug.Assert .Record(1).Field("Поле1") = 777
     Debug.Assert .Filter.Fields(777).Count = 1
     Debug.Assert .Filter.Fields("NoSuchValue").Count = 0
+    Dim RecListCopy As IRecordList
+    Set RecListCopy = .GetCopy
+    Debug.Assert RecListCopy.Record(1).Field("Поле1") = 777
+    Debug.Assert RecListCopy.Filter.Fields(777).Count = 1
+    Debug.Assert RecListCopy.Filter.Fields("NoSuchValue").Count = 0
+    RecListCopy.Record(2)("Поле2") = "NewForCopy"
+    Debug.Assert .Record(2)("Поле2") = "Neo"
   End With
 End Sub
 
@@ -213,6 +230,10 @@ Private Sub testRecordListWithPrimaryKey()
     Debug.Assert .Filter.Fields(Array("Значение", "Trinity"), "Поле2").Count = 3
     Debug.Assert .Filter.NotFields(Array("Джонсон", "Trinity")).Count = 3
     Debug.Assert .Filter.NotFieldsEmpty("Поле2").Count = 4
+    Dim RecListCopy As IRecordList
+    Set RecListCopy = .GetCopy
+    Debug.Assert RecListCopy.Filter.FieldsLike("Джон*", "Поле1").Count = 2
+    Debug.Assert RecListCopy.Filter.Fields(Array("Значение", "Trinity"), "Поле2").Count = 3
   End With
 End Sub
 
