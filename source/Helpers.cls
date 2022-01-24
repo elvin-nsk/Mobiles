@@ -119,17 +119,18 @@ End Function
 
 Public Function PrimaryCategory _
                 (ByVal SourceCategory As IRecord) As IRecord
-  Const Text As String = "—¡Œ– ¿"
   Set PrimaryCategory = SourceCategory.GetCopy
-  PrimaryCategory!Line1 = Text & " ó " & PrimaryCategory!Line1
+  PrimaryCategory!Line1 = _
+    Mobiles.PrimaryCategoryCaptionPrefix & " ó " & PrimaryCategory!Line1
 End Function
 
 Public Function SecondaryCategory _
                 (ByVal SourceCategory As IRecord) As IRecord
-  Const Text As String = "ƒŒœŒÀÕ»“≈À‹Õ¿ﬂ —¡Œ– ¿"
   Set SecondaryCategory = SourceCategory.GetCopy
-  SecondaryCategory!Name = SecondaryCategory!Name & "_ƒŒœ"
-  SecondaryCategory!Line1 = Text & " ó " & SecondaryCategory!Line1
+  SecondaryCategory!Name = _
+    SecondaryCategory!Name & Mobiles.SecondaryCategoryNameSuffix
+  SecondaryCategory!Line1 = _
+    Mobiles.SecondaryCategoryCaptionPrefix & " ó " & SecondaryCategory!Line1
 End Function
 
 Public Function tryBindAdditionalBlocksTable(ByVal File As IFileSpec) As IEither
@@ -205,6 +206,27 @@ Public Sub CountModelsInShapes(ByVal RecordList As IRecordList, _
   Next Shape
 End Sub
 
+Private Function CalcCount(ByVal BaseCount As String, _
+                           ByVal MinusCount As String _
+                           ) As String
+  
+  If IsFieldEmpty(MinusCount) Then Exit Function
+  
+  Dim MinusCountLng As Long
+  MinusCountLng = ToLng(MinusCount)
+  
+  If MinusCountLng = 0 Then Exit Function
+  
+  Dim BaseCountLng As Long
+  BaseCountLng = ToLng(BaseCount)
+  
+  Dim ResultLng As Long
+  ResultLng = BaseCountLng - MinusCountLng
+  If ResultLng < 0 Then ResultLng = 0
+  CalcCount = VBA.CStr(ResultLng)
+
+End Function
+
 Public Sub CreateSheetOrNotify _
            (ByVal Category As IRecord, _
             ByVal Models As IRecordList, _
@@ -276,19 +298,6 @@ Public Function IsFieldEmpty(ByVal Field As String) As Boolean
 ErrorHandler:
   On Error GoTo 0
   IsFieldEmpty = False
-End Function
-
-Private Function CalcCount(ByVal BaseCount As String, _
-                           ByVal MinusCount As String _
-                           ) As String
-  Dim BaseCountLng As Long
-  BaseCountLng = ToLng(BaseCount)
-  Dim MinusCountLng As Long
-  MinusCountLng = ToLng(MinusCount)
-  Dim ResultLng As Long
-  ResultLng = BaseCountLng - MinusCountLng
-  If ResultLng < 0 Then ResultLng = 0
-  CalcCount = VBA.CStr(ResultLng)
 End Function
 
 Private Function ToLng(ByVal Value As String) As Long

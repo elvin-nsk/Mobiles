@@ -21,6 +21,10 @@ Public Const SizesDelimiterSymbol As String = ","
 Public Const SizesMultiplierSymbol As String = "x"
 Public Const CaptionsNewLineSymbol As String = ";"
 
+Public Const PrimaryCategoryCaptionPrefix As String = "—Ѕќ– ј"
+Public Const SecondaryCategoryCaptionPrefix As String = "ƒќѕќЋЌ»“≈Ћ№Ќјя —Ѕќ– ј"
+Public Const SecondaryCategoryNameSuffix As String = "_ƒќѕ"
+
 Public Const SubColumn1 As Long = 5
 Public Const SubColumn2 As Long = 6
 Public Const SubColumn3 As Long = 7
@@ -28,8 +32,10 @@ Public Const SubColumn4 As Long = 8
 
 Public Const CaptionsColor As String = "CMYK,USER,0,0,0,100"
 
-Public Const DebugMobilesRootRepalceFrom As String = "C:\ћ \"
-Public Const DebugMobilesRootRepalceTo As String = "e:\WORK\макросы Corel\на заказ\ƒмитрий Ўмыга\Mobiles\материалы\2021-11-29\Data\"
+Public Const DebugMobilesRootRepalceFrom As String = _
+  "C:\ћ \"
+Public Const DebugMobilesRootRepalceTo As String = _
+  "e:\WORK\макросы Corel\на заказ\ƒмитрий Ўмыга\Mobiles\материалы\2021-11-29\Data\"
 
 '===============================================================================
 
