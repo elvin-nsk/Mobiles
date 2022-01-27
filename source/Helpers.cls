@@ -68,11 +68,11 @@ Public Function tryBindModelsTable(ByVal File As IFileSpec, _
     .WithKey "SubCount2", Mobiles.SubColumn2
     .WithKey "SubCount3", Mobiles.SubColumn3
     .WithKey "SubCount4", Mobiles.SubColumn4
-    .WithKey "ExcludeCount", 9
-    .WithKey "ExcludeSubCount1", 10
-    .WithKey "ExcludeSubCount2", 11
-    .WithKey "ExcludeSubCount3", 12
-    .WithKey "ExcludeSubCount4", 13
+    .WithOptionalKey "ExcludeCount", 9
+    .WithOptionalKey "ExcludeSubCount1", 10
+    .WithOptionalKey "ExcludeSubCount2", 11
+    .WithOptionalKey "ExcludeSubCount3", 12
+    .WithOptionalKey "ExcludeSubCount4", 13
     Set tryBindModelsTable = Either.Create(.Build)
   End With
 End Function
