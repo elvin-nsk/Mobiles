@@ -62,8 +62,14 @@ Friend Function Init( _
     Set .AllModels = Models
     Set .AdditionalBlocks = AdditionalBlocks
     Set .Sizes = Sizes
-    Set .SortingStrategy = GroupingStrategyByCount.Create _
-                           (.Category, .AdditionalBlocks, .Sizes)
+    If Helpers.ToLng(.Category("GroupByCount")) = 0 Then
+      Set .SortingStrategy = GroupingStrategyBySize.Create _
+                             (.Category, .AdditionalBlocks, .Sizes)
+    Else
+      Set .SortingStrategy = GroupingStrategyByCount.Create _
+                             (.Category, .AdditionalBlocks, .Sizes)
+    End If
+    
     
     FilterModels
     If .FilteredModels.Count = 0 Then

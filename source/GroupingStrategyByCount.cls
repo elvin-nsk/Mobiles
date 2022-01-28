@@ -51,11 +51,13 @@ End Function
 Private Property Get IGroupingStrategy_Caption _
                      (ByVal Model As IRecord, _
                       ByVal AdditionalBlocksID As Long, _
-                      ByVal Count As String) As String
+                      ByVal Count As String, _
+                      ByVal Shape As Shape _
+                      ) As String
   IGroupingStrategy_Caption = GetCountText(Count)
 End Property
 
-Private Property Get IGroupingStrategy_Count(ByVal Count As String) As Long
+Private Property Get IGroupingStrategy_Count(ByVal CountString As String) As Long
   IGroupingStrategy_Count = 1
 End Property
 
@@ -65,7 +67,7 @@ Private Property Get IGroupingStrategy_Key _
                       ByVal Count As String, _
                       ByVal Shape As Shape _
                       ) As String
-  IGroupingStrategy_Key = GetCountText(Count)
+  IGroupingStrategy_Key = Self.Caption(Model, AdditionalBlocksID, Count, Shape)
 End Property
 
 '===============================================================================
@@ -73,3 +75,7 @@ End Property
 Private Function GetCountText(ByVal Count As String) As String
   GetCountText = "ןמ " & Count & " רע."
 End Function
+
+Private Property Get Self() As IGroupingStrategy
+  Set Self = Me
+End Property

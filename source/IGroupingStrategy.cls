@@ -14,10 +14,12 @@ Option Explicit
 
 Public Property Get Caption(ByVal Model As IRecord, _
                             ByVal AdditionalBlocksID As Long, _
-                            ByVal Count As String) As String
+                            ByVal Count As String, _
+                            ByVal Shape As Shape _
+                            ) As String
 End Property
 
-Public Property Get Count(ByVal Count As String) As Long
+Public Property Get Count(ByVal CountString As String) As Long
 End Property
 
 Public Property Get Key(ByVal Model As IRecord, _

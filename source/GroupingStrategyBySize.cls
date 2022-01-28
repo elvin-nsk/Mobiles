@@ -51,27 +51,29 @@ End Function
 Private Property Get IGroupingStrategy_Caption _
                      (ByVal Model As IRecord, _
                       ByVal AdditionalBlocksID As Long, _
-                      ByVal Count As String) As String
+                      ByVal Count As String, _
+                      ByVal Shape As Shape _
+                      ) As String
   With This
     If AdditionalBlocksID = 0 Then
       If .Sizes.PrimaryFieldExists(Model!Size) Then
         IGroupingStrategy_Caption = .Sizes(Model!Size)("Name")
       Else
-        IGroupingStrategy_Caption = Model!Size
+        IGroupingStrategy_Caption = GetModelSize(Model, Shape)
       End If
     Else
       If .AdditionalBlocks.PrimaryFieldExists(VBA.CStr(AdditionalBlocksID)) Then
         IGroupingStrategy_Caption = _
           .AdditionalBlocks(VBA.CStr(AdditionalBlocksID))("Name")
       Else
-        IGroupingStrategy_Caption = Model!Size
+        IGroupingStrategy_Caption = GetModelSize(Model, Shape)
       End If
     End If
   End With
 End Property
 
-Private Property Get IGroupingStrategy_Count(ByVal Count As String) As Long
-  IGroupingStrategy_Count = VBA.CLng(Count)
+Private Property Get IGroupingStrategy_Count(ByVal CountString As String) As Long
+  IGroupingStrategy_Count = VBA.CLng(CountString)
 End Property
 
 Private Property Get IGroupingStrategy_Key _
@@ -80,21 +82,29 @@ Private Property Get IGroupingStrategy_Key _
                       ByVal Count As String, _
                       ByVal Shape As Shape _
                       ) As String
-  If Model!Size = "" Then
-    IGroupingStrategy_Key = GetSizeFromShape(Shape)
-  Else
-    If AdditionalBlocksID = 0 Then
-      IGroupingStrategy_Key = Model!Size
-    Else
-      IGroupingStrategy_Key = Model!Size & "_" & VBA.CStr(AdditionalBlocksID)
-    End If
-  End If
+  IGroupingStrategy_Key = Self.Caption(Model, AdditionalBlocksID, Count, Shape)
 End Property
 
 '===============================================================================
+
+Private Function GetModelSize(ByVal Model As IRecord, _
+                              ByVal Shape As Shape _
+                              ) As String
+  With This
+    If Model!Size = "" Then
+      GetModelSize = GetSizeFromShape(Shape)
+    Else
+      GetModelSize = Model!Size
+    End If
+  End With
+End Function
 
 Private Function GetSizeFromShape(ByVal Shape As Shape) As String
   GetSizeFromShape = VBA.CStr(VBA.Round(Shape.SizeWidth, 0))
   GetSizeFromShape = GetSizeFromShape & Mobiles.SizesMultiplierSymbol & _
                   VBA.CStr(VBA.Round(Shape.SizeHeight, 0))
 End Function
+
+Private Property Get Self() As IGroupingStrategy
+  Set Self = Me
+End Property

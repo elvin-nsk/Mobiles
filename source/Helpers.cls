@@ -113,6 +113,7 @@ Public Function tryBindCategoriesTable(ByVal File As IFileSpec) As IEither
     .WithKey "Line2", 4
     .WithKey "MaxBlocksInWidth", 5
     .WithKey "MaxPlacesInWidth", 6
+    .WithOptionalKey "GroupByCount", 7
     Set tryBindCategoriesTable = Either.Create(.Build)
   End With
 End Function
@@ -300,7 +301,7 @@ ErrorHandler:
   IsFieldEmpty = False
 End Function
 
-Private Function ToLng(ByVal Value As String) As Long
+Public Function ToLng(ByVal Value As String) As Long
   If Value = "" Then Exit Function
   ToLng = VBA.CLng(Value)
 End Function

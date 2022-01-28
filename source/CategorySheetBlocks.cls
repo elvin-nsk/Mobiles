@@ -73,7 +73,7 @@ Public Property Get BlocksArray() As Variant
 End Property
 
 Public Property Get ToDictionary() As Scripting.Dictionary
-  Set BlocksDictionary = This.Blocks
+  Set ToDictionary = This.Blocks
 End Property
 
 Public Property Get Self() As CategorySheetBlocks
@@ -109,7 +109,7 @@ Private Function AddModelToSuitableBlockIfCountNotEmpty _
   Dim Block As CategorySheetBlock
   Set Block = GetOrCreateBlock _
     (This.SortingStrategy.Key(ModelRecord, AdditionalBlocksID, Count, Shape), _
-     ModelRecord, AdditionalBlocksID, Count)
+     ModelRecord, AdditionalBlocksID, Count, Shape)
   Block.Add Model
   
   AddModelToSuitableBlockIfCountNotEmpty = True
@@ -119,7 +119,8 @@ End Function
 Private Function GetOrCreateBlock(ByVal Key As String, _
                                   ByVal ModelRecord As IRecord, _
                                   ByVal AdditionalBlocksID As Long, _
-                                  ByVal Count As String _
+                                  ByVal Count As String, _
+                                  ByVal Shape As Shape _
                                   ) As CategorySheetBlock
   With This
     
@@ -132,7 +133,7 @@ Private Function GetOrCreateBlock(ByVal Key As String, _
     This.Blocks.Add Key, GetOrCreateBlock
         
     GetOrCreateBlock.Caption.Line1 = _
-      .SortingStrategy.Caption(ModelRecord, AdditionalBlocksID, Count)
+      .SortingStrategy.Caption(ModelRecord, AdditionalBlocksID, Count, Shape)
     GetOrCreateBlock.MaxPlacesInWidth = _
       .Category!MaxPlacesInWidth
   
