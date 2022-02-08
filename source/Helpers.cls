@@ -211,12 +211,8 @@ Private Function CalcCount(ByVal BaseCount As String, _
                            ByVal MinusCount As String _
                            ) As String
   
-  If IsFieldEmpty(MinusCount) Then Exit Function
-  
   Dim MinusCountLng As Long
   MinusCountLng = ToLng(MinusCount)
-  
-  If MinusCountLng = 0 Then Exit Function
   
   Dim BaseCountLng As Long
   BaseCountLng = ToLng(BaseCount)
